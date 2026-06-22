@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="styles.css" />
+    <title>Test</title>
+  </head>
+  <body>
+    <main class="page-wrapper">
+      <section class="text-section">
+        <article class="blurb">
+          <h2>Subtitle project</h2>
+          <h3>Agus</h3>
+          <p>
+            Lorem ipsum dolor sit amet consectetur adipisicing elit. Voluptatem
+            fugiat eligendi et aut necessitatibus earum voluptatibus quisquam
+            incidunt repudiandae eaque facilis hic, dolore, voluptas placeat
+            assumenda repellat vel eveniet. Officiis.
+          </p>
+        </article>
+        <div class="page-config">
+          <label for="font-size" class="switch"
+            >Font size
+            <input type="checkbox" name="font-size" id="font-size" />
+            <span class="slider round"></span>
+          </label>
+          <label for="language"
+            >Language
+            <select name="language" id="language">
+              <option value="english">English</option>
+              <option value="indonesian">Indonesian</option>
+              <option value="french">French</option>
+            </select>
+          </label>
+          <label for="contrast" class="switch"
+            >Contrast
+            <input type="checkbox" name="contrast" id="contrast" />
+            <span class="slider round"></span>
+          </label>
+        </div>
+      </section>
+      <div class="play-section">
+        <h2 class="play-button">Play</h2>
+        <img src="transparency-water.webp" alt="Still sea water" />
+      </div>
+    </main>
+    <div class="video-container">
+      <div class="video-wrapper">
+        <video controls autoplay muted loop>
+          <source src="./video.mp4" type="video/mp4" />
+        </video>
+      </div>
+    </div>
+    <script type="module" src="script.js"></script>
+  </body>
+</html>
