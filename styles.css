@@ -1,8 +1,8 @@
 *,
 *::before,
 *::after {
-  font-family:
-    400 68px/1.1 Helvetica,
+  font:
+    400 20px/1.1 Helvetica,
     sans-serif;
   margin: 0;
   padding: 0;
@@ -31,6 +31,10 @@
   flex-flow: column;
   gap: 10px;
   width: 400px;
+}
+.blurb h2 {
+  font-weight: 900;
+  font-size: 24px;
 }
 
 .page-config {
