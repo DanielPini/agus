@@ -1,0 +1,27 @@
+:root {
+  --caption-font-family: Helvetica, sans-serif;
+  --caption-colour: white;
+  --caption-box-colour: black;
+}
+
+.caption-container {
+  font-family: var(--caption-font-family);
+  font-size: var(--caption-font-size);
+  position: absolute;
+  bottom: 50px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: auto;
+  height: auto;
+  padding: 10px 14px;
+  background-color: var(--caption-box-colour);
+  color: var(--caption-colour);
+  text-align: center;
+  white-space: nowrap;
+}
+
+@media (max-width: 780px) {
+  .caption-container {
+    bottom: -60px;
+  }
+}

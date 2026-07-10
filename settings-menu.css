@@ -1,0 +1,127 @@
+/* ----------Burger menu + settings drawer---------- */
+
+.burger-button {
+  display: none;
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 21;
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.5);
+  color: white;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+body.video-open .burger-button {
+  display: block;
+}
+
+/* ----------Capsule settings menu---------- */
+
+.capsule {
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.05);
+  color: inherit;
+  padding: 10px 20px;
+  font-size: 15px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.capsule:hover {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.capsule:focus-visible {
+  outline: 2px solid #f32121;
+  outline-offset: 2px;
+}
+
+.capsule-list {
+  display: flex;
+  gap: 10px;
+}
+
+.capsule-list--vertical {
+  flex-flow: column nowrap;
+  gap: 15px;
+  align-items: flex-end;
+}
+
+.capsule-list--horizontal {
+  flex-flow: row nowrap;
+  justify-content: flex-end;
+  max-width: 100%;
+  overflow: visible;
+}
+
+.capsule-row-track {
+  display: flex;
+  gap: 10px;
+  width: max-content;
+}
+
+.capsule-row-track .capsule {
+  flex: 0 0 auto;
+}
+
+.capsule--close {
+  padding: 10px 14px;
+}
+
+.settings-menu-floating {
+  position: fixed;
+  top: 68px;
+  right: 16px;
+  z-index: 20;
+  background: rgba(0, 0, 0, 0.8);
+  border-radius: 16px;
+  padding: 16px;
+  max-width: calc(100vw - 32px);
+}
+
+.settings-menu-floating .capsule {
+  border-color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.settings-menu-floating .capsule:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.settings-menu-floating .capsule-list--vertical {
+  align-items: flex-end;
+  width: 100%;
+  min-width: 0;
+}
+
+.settings-menu-floating .capsule-list--horizontal {
+  justify-content: flex-start;
+  align-self: stretch;
+  min-width: 0;
+}
+
+.settings-menu-inline {
+  display: flex;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.settings-menu-inline .capsule-list--vertical {
+  align-items: flex-start;
+  width: 100%;
+  min-width: 0;
+}
+
+.settings-menu-inline .capsule-list--horizontal {
+  justify-content: flex-start;
+  align-self: stretch;
+  min-width: 0;
+}

@@ -1,31 +1,5 @@
-export type Language = "english" | "french" | "german" | "indonesian";
-
-export const languages: Language[] = ["english", "french", "german", "indonesian"];
-
-export type CaptionText = Record<Language, string>;
-
-export type CustomCaption = {
-  id: number;
-  timestamps?: string;
-  text: CaptionText;
-  condition: (state: State) => boolean;
-  duration: number;
-};
-
-export type State = {
-  directionX: "right" | "left" | "none";
-  directionY: "down" | "up" | "none";
-  position: { x: number; y: number };
-  speed: number;
-};
-
-export type Caption = {
-  id: number;
-  timestamps?: string;
-  text: CaptionText;
-  timeStart: number;
-  duration: number;
-};
+import type { State } from "./pointer-tracker.js";
+import type { Caption, CustomCaption } from "./captions-types.js";
 
 export const captions: Caption[] = [
   {

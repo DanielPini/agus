@@ -3,7 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="reset.css" />
+    <link rel="stylesheet" href="layout.css" />
+    <link rel="stylesheet" href="video.css" />
+    <link rel="stylesheet" href="captions.css" />
+    <link rel="stylesheet" href="settings-menu.css" />
+    <link rel="stylesheet" href="settings-picker.css" />
     <title>Test</title>
   </head>
   <body>
@@ -36,8 +41,8 @@ is speaking.
     <div class="video-container">
       <button class="close-button" aria-label="Close video">&times;</button>
       <div class="video-wrapper">
-        <video autoplay muted loop>
-          <source src="./s250626.webm" type="video/mp4" />
+        <video autoplay muted loop playsinline webkit-playsinline="true">
+          <source src="./s250626.webm" type="video/webm" />
         </video>
       </div>
     </div>

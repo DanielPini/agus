@@ -1,4 +1,4 @@
-import { type Language, languages } from "./captions.js";
+import { type Language, languages } from "./captions-types.js";
 
 export type FontFamily = "Helvetica" | "Georgia" | "Courier New" | "Times New Roman";
 export type FontColour = "white" | "black" | "red" | "cyan" | "yellow";

@@ -1,4 +1,3 @@
-export const languages = ["english", "french", "german", "indonesian"];
 export const captions = [
     {
         id: 1,

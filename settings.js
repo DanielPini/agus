@@ -1,4 +1,4 @@
-import { languages } from "./captions.js";
+import { languages } from "./captions-types.js";
 export const defaultSettings = {
     fontFamily: "Helvetica",
     fontColour: "white",
