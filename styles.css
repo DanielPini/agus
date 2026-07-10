@@ -10,8 +10,8 @@
 }
 
 .page-wrapper {
-  /* display: grid;
-  grid-template-rows: 1fr 1fr; */
+  display: grid;
+  grid-template-rows: 1fr 1000px;
   min-height: 100vh;
   height: fit-content;
   overflow: hidden;
@@ -46,10 +46,19 @@
 .play-section {
   position: relative;
   max-width: 100vw;
+  width: 100vw;
+  height: 1000px;
 }
 
-.image {
+.play-section::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: url(transparency-water.webp);
+  background-repeat: no-repeat;
+  background-size: cover;
   filter: grayscale(0.7);
+  z-index: -1;
 }
 
 .play-button {
@@ -92,24 +101,13 @@
 }
 
 .caption-container {
-  font-family:
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    Roboto,
-    Oxygen,
-    Ubuntu,
-    Cantarell,
-    "Open Sans",
-    "Helvetica Neue",
-    sans-serif;
+  font-family: Helvetica, sans-serif;
   position: absolute;
-  bottom: 60px;
+  bottom: 50px;
   left: 50%;
   transform: translateX(-50%);
   width: auto;
-  height: 20px;
+  height: 40px;
   padding: 10px 14px;
   background-color: black;
   color: white;
