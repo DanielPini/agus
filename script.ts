@@ -212,7 +212,7 @@ function enableArrowNav(
 function createSettingsMenu(
   container: HTMLElement,
   opts: { focusOnBuild?: boolean; onRootEscape?: () => void } = {},
-) {
+): { collapseToRoot: () => void } {
   let openBranch: Branch | null = null;
 
   function render() {
@@ -290,10 +290,19 @@ function createSettingsMenu(
     });
   }
 
+  function collapseToRoot() {
+    if (openBranch === null && picker.hidden) return;
+    closePicker();
+    openBranch = null;
+    render();
+  }
+
   render();
   if (opts.focusOnBuild) {
     (container.querySelector<HTMLElement>(".capsule"))?.focus();
   }
+
+  return { collapseToRoot };
 }
 
 // ---------- Shared bottom picker ----------
@@ -466,7 +475,7 @@ picker.addEventListener("keydown", (e) => {
 // ---------- Inline instance (always visible in the page) ----------
 
 const inlineSettings = document.querySelector<HTMLDivElement>("#settings-inline")!;
-createSettingsMenu(inlineSettings);
+const inlineMenu = createSettingsMenu(inlineSettings);
 
 // ---------- Floating instance (burger, top-right, while video is open) ----------
 
@@ -493,20 +502,27 @@ burgerButton.addEventListener("click", () => {
   }
 });
 
+// Clicking anywhere outside a menu (and outside the shared picker) collapses
+// its open sub-capsules back to the root two-capsule state. Use
+// composedPath, not e.target: a capsule click re-renders its menu and
+// detaches the clicked button from the DOM before this listener runs,
+// which would make a `.contains(target)` check wrongly see it as "outside".
 document.addEventListener("click", (e) => {
-  if (floatingMenu.hidden) return;
-  // Use composedPath, not e.target: a capsule click re-renders the menu
-  // and detaches the clicked button before this listener runs, which
-  // would make a `.contains(target)` check see it as an outside click.
   const path = e.composedPath();
-  if (
-    path.includes(floatingMenu) ||
-    path.includes(burgerButton) ||
-    path.includes(picker)
-  ) {
-    return;
+  const insidePicker = path.includes(picker);
+
+  if (!path.includes(inlineSettings) && !insidePicker) {
+    inlineMenu.collapseToRoot();
   }
-  closeFloatingMenu();
+
+  if (
+    !floatingMenu.hidden &&
+    !path.includes(floatingMenu) &&
+    !path.includes(burgerButton) &&
+    !insidePicker
+  ) {
+    closeFloatingMenu();
+  }
 });
 
 console.log("Got to the end of the file");

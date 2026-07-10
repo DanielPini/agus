@@ -230,10 +230,18 @@ function createSettingsMenu(container, opts = {}) {
             (_a = container.querySelector(`[data-branch="${branch}"]`)) === null || _a === void 0 ? void 0 : _a.focus();
         });
     }
+    function collapseToRoot() {
+        if (openBranch === null && picker.hidden)
+            return;
+        closePicker();
+        openBranch = null;
+        render();
+    }
     render();
     if (opts.focusOnBuild) {
         (_a = (container.querySelector(".capsule"))) === null || _a === void 0 ? void 0 : _a.focus();
     }
+    return { collapseToRoot };
 }
 // ---------- Shared bottom picker ----------
 const picker = document.querySelector("#settings-picker");
@@ -375,7 +383,7 @@ picker.addEventListener("keydown", (e) => {
 });
 // ---------- Inline instance (always visible in the page) ----------
 const inlineSettings = document.querySelector("#settings-inline");
-createSettingsMenu(inlineSettings);
+const inlineMenu = createSettingsMenu(inlineSettings);
 // ---------- Floating instance (burger, top-right, while video is open) ----------
 function closeFloatingMenu() {
     floatingMenu.hidden = true;
@@ -399,18 +407,22 @@ burgerButton.addEventListener("click", () => {
         closeFloatingMenu();
     }
 });
+// Clicking anywhere outside a menu (and outside the shared picker) collapses
+// its open sub-capsules back to the root two-capsule state. Use
+// composedPath, not e.target: a capsule click re-renders its menu and
+// detaches the clicked button from the DOM before this listener runs,
+// which would make a `.contains(target)` check wrongly see it as "outside".
 document.addEventListener("click", (e) => {
-    if (floatingMenu.hidden)
-        return;
-    // Use composedPath, not e.target: a capsule click re-renders the menu
-    // and detaches the clicked button before this listener runs, which
-    // would make a `.contains(target)` check see it as an outside click.
     const path = e.composedPath();
-    if (path.includes(floatingMenu) ||
-        path.includes(burgerButton) ||
-        path.includes(picker)) {
-        return;
+    const insidePicker = path.includes(picker);
+    if (!path.includes(inlineSettings) && !insidePicker) {
+        inlineMenu.collapseToRoot();
     }
-    closeFloatingMenu();
+    if (!floatingMenu.hidden &&
+        !path.includes(floatingMenu) &&
+        !path.includes(burgerButton) &&
+        !insidePicker) {
+        closeFloatingMenu();
+    }
 });
 console.log("Got to the end of the file");

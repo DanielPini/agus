@@ -58,10 +58,12 @@
 
 .settings-menu-inline .capsule-list--vertical {
   align-items: flex-start;
+  width: 100%;
 }
 
 .settings-menu-inline .capsule-list--horizontal {
   justify-content: flex-start;
+  align-self: stretch;
 }
 
 .play-section {
@@ -322,4 +324,38 @@ body.video-open .burger-button {
 .picker-item:focus-visible {
   outline: 2px solid #f32121;
   outline-offset: 4px;
+}
+
+/* ----------Fit one screen on mobile, no vertical scroll---------- */
+
+@media (max-width: 780px) {
+  .page-wrapper {
+    height: 100vh;
+    grid-template-rows: auto 1fr;
+  }
+
+  .text-section {
+    margin-top: 20px;
+  }
+
+  .text-column {
+    gap: 12px;
+  }
+
+  .blurb {
+    gap: 4px;
+  }
+
+  .blurb pre {
+    font-size: 14px;
+  }
+
+  .play-section {
+    height: auto;
+    min-height: 0;
+  }
+
+  .play-button {
+    font-size: 36px;
+  }
 }
