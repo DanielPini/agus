@@ -133,7 +133,85 @@ function makeCapsule(label, ariaLabel) {
         btn.setAttribute("aria-label", ariaLabel);
     return btn;
 }
-function enableArrowNav(list, orientation, onEscape) {
+// A horizontal strip whose overflow is CSS `visible` (nothing is clipped) —
+// "scrolling" is instead a `transform: translateX()` on an inner track,
+// driven by pointer drag (mouse + touch, unified via the Pointer Events API)
+// and by wheel input. `viewport` is the stable, untransformed element used
+// as the reference frame for centering math; `track` is the element that
+// actually moves and holds the items.
+function makeDraggableTrack(viewport, track, onChange) {
+    let offset = 0;
+    let dragging = false;
+    let startClientX = 0;
+    let startOffset = 0;
+    let moved = 0;
+    viewport.style.touchAction = "pan-y";
+    viewport.style.cursor = "grab";
+    function clampOffset(px) {
+        const min = Math.min(0, viewport.clientWidth - track.offsetWidth);
+        return Math.max(min, Math.min(0, px));
+    }
+    function setOffset(px) {
+        offset = clampOffset(px);
+        track.style.transform = `translateX(${offset}px)`;
+        onChange === null || onChange === void 0 ? void 0 : onChange();
+    }
+    function resetOffset() {
+        offset = 0;
+        track.style.transform = "";
+    }
+    function centerOn(item) {
+        const viewportRect = viewport.getBoundingClientRect();
+        const itemRect = item.getBoundingClientRect();
+        const viewportCenter = viewportRect.left + viewportRect.width / 2;
+        const itemCenter = itemRect.left + itemRect.width / 2;
+        setOffset(offset + (viewportCenter - itemCenter));
+    }
+    viewport.addEventListener("pointerdown", (e) => {
+        dragging = true;
+        moved = 0;
+        startClientX = e.clientX;
+        startOffset = offset;
+        viewport.setPointerCapture(e.pointerId);
+        viewport.style.cursor = "grabbing";
+    });
+    viewport.addEventListener("pointermove", (e) => {
+        if (!dragging)
+            return;
+        const delta = e.clientX - startClientX;
+        moved = Math.max(moved, Math.abs(delta));
+        setOffset(startOffset + delta);
+    });
+    function endDrag() {
+        if (!dragging)
+            return;
+        dragging = false;
+        viewport.style.cursor = "grab";
+        if (moved > 5) {
+            // A real drag happened — swallow the synthetic click that would
+            // otherwise fire on release and accidentally select/activate
+            // whatever capsule the pointer happens to be over.
+            const swallow = (ce) => {
+                ce.stopPropagation();
+                ce.preventDefault();
+            };
+            viewport.addEventListener("click", swallow, { capture: true, once: true });
+        }
+    }
+    viewport.addEventListener("pointerup", endDrag);
+    viewport.addEventListener("pointercancel", endDrag);
+    viewport.addEventListener("pointerleave", () => {
+        if (dragging)
+            endDrag();
+    });
+    viewport.addEventListener("wheel", (e) => {
+        e.preventDefault();
+        const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+        setOffset(offset - delta);
+    }, { passive: false });
+    return { setOffset, getOffset: () => offset, centerOn, resetOffset };
+}
+function enableArrowNav(list, orientation, onEscape, onMove) {
     const prevKey = orientation === "horizontal" ? "ArrowLeft" : "ArrowUp";
     const nextKey = orientation === "horizontal" ? "ArrowRight" : "ArrowDown";
     list.addEventListener("keydown", (e) => {
@@ -141,11 +219,15 @@ function enableArrowNav(list, orientation, onEscape) {
         const idx = buttons.indexOf(document.activeElement);
         if (e.key === prevKey && idx > -1) {
             e.preventDefault();
-            buttons[(idx - 1 + buttons.length) % buttons.length].focus();
+            const next = buttons[(idx - 1 + buttons.length) % buttons.length];
+            next.focus();
+            onMove ? onMove(next) : next.scrollIntoView({ inline: "nearest", block: "nearest" });
         }
         else if (e.key === nextKey && idx > -1) {
             e.preventDefault();
-            buttons[(idx + 1) % buttons.length].focus();
+            const next = buttons[(idx + 1) % buttons.length];
+            next.focus();
+            onMove ? onMove(next) : next.scrollIntoView({ inline: "nearest", block: "nearest" });
         }
         else if (e.key === "Escape") {
             e.preventDefault();
@@ -195,6 +277,10 @@ function createSettingsMenu(container, opts = {}) {
         row.className = "capsule-list capsule-list--horizontal";
         row.setAttribute("role", "menu");
         row.setAttribute("aria-orientation", "horizontal");
+        const track = document.createElement("div");
+        track.className = "capsule-row-track";
+        row.append(track);
+        const drag = makeDraggableTrack(row, track);
         branchLeaves[branch].forEach((leaf) => {
             const btn = makeCapsule(leaf.label);
             btn.dataset.leaf = leaf.key;
@@ -207,16 +293,16 @@ function createSettingsMenu(container, opts = {}) {
                     });
                 });
             });
-            row.append(btn);
+            track.append(btn);
         });
         const resetBtn = makeCapsule("Reset");
         resetBtn.addEventListener("click", () => collapse(branch, true));
-        row.append(resetBtn);
+        track.append(resetBtn);
         const closeBtn = makeCapsule("✕", "Close");
         closeBtn.classList.add("capsule--close");
         closeBtn.addEventListener("click", () => collapse(branch, false));
-        row.append(closeBtn);
-        enableArrowNav(row, "horizontal", () => collapse(branch, false));
+        track.append(closeBtn);
+        enableArrowNav(track, "horizontal", () => collapse(branch, false), (item) => drag.centerOn(item));
         return row;
     }
     function collapse(branch, reset) {
@@ -244,17 +330,27 @@ function createSettingsMenu(container, opts = {}) {
     return { collapseToRoot };
 }
 // ---------- Shared bottom picker ----------
+// Same visible-overflow + draggable-track approach as the branch rows, plus
+// live "centered = selected" behaviour: every drag/wheel move re-evaluates
+// which item is nearest the viewport's center and commits it via setSetting.
 const picker = document.querySelector("#settings-picker");
 const pickerTrack = document.querySelector("#picker-track");
+const pickerTrackInner = document.querySelector("#picker-track-inner");
 const pickerClose = document.querySelector("#picker-close");
 let activePickerKey = null;
 let pickerReturnFocus = null;
+const pickerDrag = makeDraggableTrack(pickerTrack, pickerTrackInner, () => {
+    const active = updateActiveItem();
+    if (active && activePickerKey) {
+        setSetting(activePickerKey, active.dataset.value);
+    }
+});
 function closePicker() {
     if (picker.hidden)
         return;
     picker.hidden = true;
-    pickerTrack.replaceChildren();
-    pickerTrack.removeEventListener("scroll", onPickerScroll);
+    pickerTrackInner.replaceChildren();
+    pickerDrag.resetOffset();
     activePickerKey = null;
     const returnFocus = pickerReturnFocus;
     pickerReturnFocus = null;
@@ -278,12 +374,12 @@ function applyPreviewStyle(item, key, value) {
     }
 }
 function focusSibling(item, dir) {
-    const items = Array.from(pickerTrack.querySelectorAll(".picker-item"));
+    const items = Array.from(pickerTrackInner.querySelectorAll(".picker-item"));
     const idx = items.indexOf(item);
     const next = items[idx + dir];
     if (next) {
         next.focus();
-        next.scrollIntoView({ inline: "center", block: "nearest" });
+        pickerDrag.centerOn(next);
         if (activePickerKey) {
             setSetting(activePickerKey, next.dataset.value);
         }
@@ -293,7 +389,7 @@ function openPicker(key, onClose) {
     activePickerKey = key;
     pickerReturnFocus = onClose;
     picker.hidden = false;
-    pickerTrack.replaceChildren();
+    pickerTrackInner.replaceChildren();
     options[key].forEach((value) => {
         const item = document.createElement("div");
         item.className = "picker-item";
@@ -325,31 +421,23 @@ function openPicker(key, onClose) {
                 closePicker();
             }
         });
-        pickerTrack.append(item);
+        pickerTrackInner.append(item);
     });
-    pickerTrack.addEventListener("scroll", onPickerScroll);
     requestAnimationFrame(() => {
-        var _a;
-        scrollToValue(getSettings()[key]);
-        requestAnimationFrame(updateActiveItem);
-        (_a = pickerTrack
-            .querySelector(`[data-value="${CSS.escape(String(getSettings()[key]))}"]`)) === null || _a === void 0 ? void 0 : _a.focus();
-    });
-}
-function onPickerScroll() {
-    requestAnimationFrame(() => {
-        const active = updateActiveItem();
-        if (active && activePickerKey) {
-            setSetting(activePickerKey, active.dataset.value);
+        const currentItem = pickerTrackInner.querySelector(`[data-value="${CSS.escape(String(getSettings()[key]))}"]`);
+        if (currentItem) {
+            pickerDrag.centerOn(currentItem);
+            currentItem.focus();
         }
+        updateActiveItem();
     });
 }
 function updateActiveItem() {
-    const containerRect = pickerTrack.getBoundingClientRect();
-    const centerX = containerRect.left + containerRect.width / 2;
+    const viewportRect = pickerTrack.getBoundingClientRect();
+    const centerX = viewportRect.left + viewportRect.width / 2;
     let closest = null;
     let closestDist = Infinity;
-    const items = pickerTrack.querySelectorAll(".picker-item");
+    const items = pickerTrackInner.querySelectorAll(".picker-item");
     items.forEach((item) => {
         const rect = item.getBoundingClientRect();
         const itemCenter = rect.left + rect.width / 2;
@@ -366,13 +454,6 @@ function updateActiveItem() {
         item.style.transform = active ? "scale(1.15)" : "scale(1)";
     });
     return closest;
-}
-function scrollToValue(value) {
-    pickerTrack.querySelectorAll(".picker-item").forEach((item) => {
-        if (item.dataset.value === String(value)) {
-            item.scrollIntoView({ inline: "center", block: "nearest" });
-        }
-    });
 }
 pickerClose.addEventListener("click", () => closePicker());
 picker.addEventListener("keydown", (e) => {
