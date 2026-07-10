@@ -9,10 +9,11 @@
   <body>
     <main class="page-wrapper">
       <section class="text-section">
-        <article class="blurb">
-          <h2>Subtitles</h2>
-          <h3>Agus Wijaya</h3>
-          <pre style="font-family: Helvetica, sans-serif">
+        <div class="text-column">
+          <article class="blurb">
+            <h2>Subtitles</h2>
+            <h3>Agus Wijaya</h3>
+            <pre style="font-family: Helvetica, sans-serif">
 A video plays on loop.
 A system of subtitles
 describes, anticipates
@@ -23,27 +24,9 @@ clarify. It becomes
 unclear what is being
 described, or who
 is speaking.
-          </pre>
-        </article>
-        <div class="page-config">
-          <label for="font-size" class="switch"
-            >Font size
-            <input type="checkbox" name="font-size" id="font-size" />
-            <span class="slider round"></span>
-          </label>
-          <label for="language"
-            >Language
-            <select name="language" id="language">
-              <option value="english">English</option>
-              <option value="indonesian">Indonesian</option>
-              <option value="french">French</option>
-            </select>
-          </label>
-          <label for="contrast" class="switch"
-            >Contrast
-            <input type="checkbox" name="contrast" id="contrast" />
-            <span class="slider round"></span>
-          </label>
+            </pre>
+          </article>
+          <nav class="settings-menu-inline" id="settings-inline" aria-label="Settings"></nav>
         </div>
       </section>
       <div class="play-section">
@@ -51,11 +34,32 @@ is speaking.
       </div>
     </main>
     <div class="video-container">
+      <button class="close-button" aria-label="Close video">&times;</button>
       <div class="video-wrapper">
-        <video controls autoplay muted loop>
+        <video autoplay muted loop>
           <source src="./s250626.webm" type="video/mp4" />
         </video>
       </div>
+    </div>
+    <button
+      class="burger-button"
+      id="burger-button"
+      aria-label="Open settings"
+      aria-expanded="false"
+    >
+      &#9776;
+    </button>
+    <nav
+      class="settings-menu-floating"
+      id="settings-floating"
+      aria-label="Settings"
+      hidden
+    ></nav>
+    <div class="settings-picker" id="settings-picker" hidden>
+      <button class="picker-close" id="picker-close" aria-label="Close">
+        &larr; Back
+      </button>
+      <div class="picker-track" id="picker-track" role="listbox"></div>
     </div>
     <script type="module" src="script.js"></script>
   </body>
