@@ -88,6 +88,13 @@ video.addEventListener("play", () => {
   isPaused = false;
   playCaption();
 });
+// `loop` should make this unreachable, but if the browser ever fires
+// `ended` anyway, restart rather than leaving the video stopped on its
+// last frame.
+video.addEventListener("ended", () => {
+  video.currentTime = 0;
+  video.play();
+});
 
 let lastX = 0;
 let lastY = 0;
@@ -191,10 +198,11 @@ function makeDraggableTrack(
   onChange?: () => void,
 ) {
   let offset = 0;
-  let dragging = false;
+  let dragging = false; // pointer is down, watching for movement
+  let engaged = false; // movement passed the threshold — an actual drag
   let startClientX = 0;
   let startOffset = 0;
-  let moved = 0;
+  const DRAG_THRESHOLD = 5;
 
   viewport.style.touchAction = "pan-y";
   viewport.style.cursor = "grab";
@@ -223,27 +231,37 @@ function makeDraggableTrack(
     setOffset(offset + (viewportCenter - itemCenter));
   }
 
+  // Pointer capture is deferred until real movement is detected. Capturing
+  // immediately on pointerdown retargets ALL subsequent pointer/click events
+  // to the capturing element (per the Pointer Events spec) — which silently
+  // broke every plain click/tap, not just drags, since the underlying
+  // button never received its own pointerup/click.
   viewport.addEventListener("pointerdown", (e: PointerEvent) => {
     dragging = true;
-    moved = 0;
+    engaged = false;
     startClientX = e.clientX;
     startOffset = offset;
-    viewport.setPointerCapture(e.pointerId);
-    viewport.style.cursor = "grabbing";
   });
 
   viewport.addEventListener("pointermove", (e: PointerEvent) => {
     if (!dragging) return;
     const delta = e.clientX - startClientX;
-    moved = Math.max(moved, Math.abs(delta));
+    if (!engaged) {
+      if (Math.abs(delta) < DRAG_THRESHOLD) return;
+      engaged = true;
+      viewport.setPointerCapture(e.pointerId);
+      viewport.style.cursor = "grabbing";
+    }
     setOffset(startOffset + delta);
   });
 
-  function endDrag() {
+  function endDrag(e: PointerEvent) {
     if (!dragging) return;
     dragging = false;
     viewport.style.cursor = "grab";
-    if (moved > 5) {
+    if (engaged) {
+      engaged = false;
+      viewport.releasePointerCapture(e.pointerId);
       // A real drag happened — swallow the synthetic click that would
       // otherwise fire on release and accidentally select/activate
       // whatever capsule the pointer happens to be over.
@@ -257,8 +275,9 @@ function makeDraggableTrack(
 
   viewport.addEventListener("pointerup", endDrag);
   viewport.addEventListener("pointercancel", endDrag);
-  viewport.addEventListener("pointerleave", () => {
-    if (dragging) endDrag();
+  viewport.addEventListener("pointerleave", (e: PointerEvent) => {
+    if (dragging && !engaged) dragging = false;
+    else if (dragging) endDrag(e);
   });
 
   viewport.addEventListener(

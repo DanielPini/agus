@@ -231,7 +231,6 @@ body.video-open .burger-button {
   justify-content: flex-end;
   max-width: 100%;
   overflow: visible;
-  padding: 6px;
 }
 
 .capsule-row-track {
@@ -276,7 +275,7 @@ body.video-open .burger-button {
 }
 
 .settings-menu-floating .capsule-list--horizontal {
-  justify-content: flex-end;
+  justify-content: flex-start;
   align-self: stretch;
   min-width: 0;
 }
