@@ -1,5 +1,10 @@
 {
+  "scripts": {
+    "build": "tsc --noEmit && esbuild script.ts --bundle --outfile=bundle.js --format=iife",
+    "build:prod": "tsc --noEmit && esbuild script.ts --bundle --outfile=bundle.js --format=iife --minify"
+  },
   "devDependencies": {
+    "esbuild": "^0.28.1",
     "typescript": "^6.0.3"
   }
 }

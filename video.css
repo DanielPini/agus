@@ -23,8 +23,21 @@
   width: fit-content;
 }
 
-video {
+#vimeo-player,
+#vimeo-player iframe {
+  display: block;
+  width: 1080px;
   max-width: 100vw;
+  aspect-ratio: 16 / 9;
+  height: auto;
+  pointer-events: none;
+}
+
+.video-click-target {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  cursor: pointer;
 }
 
 .close-button {

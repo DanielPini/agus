@@ -2,7 +2,7 @@ import { customCaptions, captions } from "./captions-data.js";
 import type { CustomCaption, Caption } from "./captions-types.js";
 import { getSettings, onSettingsChange } from "./settings.js";
 import { createPointerTracker } from "./pointer-tracker.js";
-import { video, videoWrapper } from "./video.js";
+import { videoPlayer, videoWrapper } from "./video.js";
 
 let currentId: number | null = null;
 let currentCaption: Caption | CustomCaption | null = null;
@@ -14,7 +14,7 @@ const pointerTracker = createPointerTracker();
 
 function playCaption() {
   if (isPaused) return;
-  const time = video.currentTime * 1000;
+  const time = videoPlayer.getCurrentTime() * 1000;
 
   const custom = customCaptions.find((c) => c.condition(pointerTracker.getState()));
   if (custom && currentId !== custom.id) createCaption(custom);
@@ -64,10 +64,10 @@ export function initCaptionsPlayer() {
     }
   });
 
-  video.addEventListener("pause", () => {
+  videoPlayer.onPause(() => {
     isPaused = true;
   });
-  video.addEventListener("play", () => {
+  videoPlayer.onPlay(() => {
     isPaused = false;
     playCaption();
   });
