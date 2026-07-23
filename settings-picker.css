@@ -31,12 +31,14 @@
   padding: 10px 0;
 }
 
+/* No auto-centering here — centerOn() in draggable-track.ts positions the
+   active item via transform on open, and needs the track's untransformed
+   position to be flush-left for its offset math to hold (see clampOffset). */
 .agus-scope .picker-track-inner {
   display: flex;
   align-items: center;
   gap: 32px;
   width: max-content;
-  margin: 0 auto;
 }
 
 .agus-scope .picker-item {

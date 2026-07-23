@@ -572,15 +572,18 @@ is speaking.
     return fontFamily.includes(" ") ? `"${fontFamily}"` : fontFamily;
   }
   function applySettings() {
-    const root = document.documentElement;
-    root.style.setProperty(
+    const scopeRoot = document.getElementById("agus-root") ?? document.documentElement;
+    scopeRoot.style.setProperty(
       "--caption-font-family",
       `${quoteIfNeeded(settings.fontFamily)}, sans-serif`
     );
-    root.style.setProperty("--caption-colour", settings.fontColour);
-    root.style.setProperty("--caption-box-colour", settings.boxColour);
-    root.setAttribute("lang", languageCodes[settings.language]);
-    root.setAttribute("data-audio-description", settings.audioDescription);
+    scopeRoot.style.setProperty("--caption-colour", settings.fontColour);
+    scopeRoot.style.setProperty("--caption-box-colour", settings.boxColour);
+    document.documentElement.setAttribute("lang", languageCodes[settings.language]);
+    document.documentElement.setAttribute(
+      "data-audio-description",
+      settings.audioDescription
+    );
     listeners.forEach((fn) => fn(settings));
   }
   applySettings();
@@ -698,8 +701,10 @@ is speaking.
     viewport.style.touchAction = "pan-y";
     viewport.style.cursor = "grab";
     function clampOffset(px) {
-      const min = Math.min(0, viewport.clientWidth - track.offsetWidth);
-      return Math.max(min, Math.min(0, px));
+      const slack = viewport.clientWidth - track.offsetWidth;
+      const min = Math.min(0, slack);
+      const max = Math.max(0, slack);
+      return Math.max(min, Math.min(max, px));
     }
     function setOffset(px) {
       offset = clampOffset(px);

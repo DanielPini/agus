@@ -20,8 +20,20 @@ export function makeDraggableTrack(
   viewport.style.cursor = "grab";
 
   function clampOffset(px: number): number {
-    const min = Math.min(0, viewport.clientWidth - track.offsetWidth);
-    return Math.max(min, Math.min(0, px));
+    // When the track is wider than the viewport, this only allows negative
+    // offsets (drag left to reveal more, min < 0, max 0) — the classic
+    // "flush-left, scroll to see the rest" case. When the track is
+    // *narrower* than the viewport (e.g. a short options list like
+    // language), `viewport.clientWidth - track.offsetWidth` is positive, so
+    // both bounds used to collapse to exactly 0 — locking the track in
+    // place and making centerOn() a no-op regardless of which item it was
+    // asked to center. Allowing a symmetric positive range here lets a
+    // narrow track still be shifted right to bring any specific item to
+    // the viewport's center.
+    const slack = viewport.clientWidth - track.offsetWidth;
+    const min = Math.min(0, slack);
+    const max = Math.max(0, slack);
+    return Math.max(min, Math.min(max, px));
   }
 
   function setOffset(px: number) {

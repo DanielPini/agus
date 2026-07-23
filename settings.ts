@@ -93,15 +93,26 @@ function quoteIfNeeded(fontFamily: FontFamily): string {
 }
 
 function applySettings() {
-  const root = document.documentElement;
-  root.style.setProperty(
+  // captions.css declares --caption-* on #agus-root (.agus-scope) itself, not
+  // :root — a stylesheet rule on a closer ancestor always wins over a value
+  // set further up via documentElement.style, so these have to be set on the
+  // same element captions.css declares them on, or they're silently ignored.
+  // #agus-root doesn't exist yet on the very first call (module load, before
+  // dom.ts has built anything) — falls back to documentElement.style then,
+  // which is harmless since it just matches the CSS's own defaults.
+  const scopeRoot = document.getElementById("agus-root") ?? document.documentElement;
+  scopeRoot.style.setProperty(
     "--caption-font-family",
     `${quoteIfNeeded(settings.fontFamily)}, sans-serif`,
   );
-  root.style.setProperty("--caption-colour", settings.fontColour);
-  root.style.setProperty("--caption-box-colour", settings.boxColour);
-  root.setAttribute("lang", languageCodes[settings.language]);
-  root.setAttribute("data-audio-description", settings.audioDescription);
+  scopeRoot.style.setProperty("--caption-colour", settings.fontColour);
+  scopeRoot.style.setProperty("--caption-box-colour", settings.boxColour);
+
+  document.documentElement.setAttribute("lang", languageCodes[settings.language]);
+  document.documentElement.setAttribute(
+    "data-audio-description",
+    settings.audioDescription,
+  );
   listeners.forEach((fn) => fn(settings));
 }
 

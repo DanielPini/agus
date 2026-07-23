@@ -39,10 +39,15 @@
    the actual text needs once the settings capsules render for real, and
    fighting that with more layout cleverness isn't worth it. Content that
    somehow needs more than this just overflows visibly rather than being
-   clipped — no `overflow: hidden` here. */
+   clipped — no `overflow: hidden` here.
+   min-height:0 is required here: flex items default to min-height:auto
+   (content-based), which silently overrides an explicit flex-basis and
+   forces the box to grow to fit its content anyway — exactly undoing the
+   400px pin above once the settings capsules render for real. */
 .agus-scope .text-section {
   display: flex;
   flex: 0 0 400px;
+  min-height: 0;
   flex-flow: row;
   width: 100%;
   margin-top: 100px;
@@ -401,12 +406,14 @@ body.video-open .agus-scope .burger-button {
   padding: 10px 0;
 }
 
+/* No auto-centering here — centerOn() in draggable-track.ts positions the
+   active item via transform on open, and needs the track's untransformed
+   position to be flush-left for its offset math to hold (see clampOffset). */
 .agus-scope .picker-track-inner {
   display: flex;
   align-items: center;
   gap: 32px;
   width: max-content;
-  margin: 0 auto;
 }
 
 .agus-scope .picker-item {
