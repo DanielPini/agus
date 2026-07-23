@@ -9,3 +9,11 @@
   padding: 0;
   box-sizing: border-box;
 }
+
+/* The host site's own CSS sets min-height (100vh) on bare <article> tags,
+   for its own article.works-wrapper layout — our blurb text is wrapped in
+   an <article> too (dom.ts), so it was silently inheriting that and being
+   forced to full page height regardless of its actual content. */
+.agus-scope article {
+  min-height: unset;
+}

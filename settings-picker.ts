@@ -91,15 +91,21 @@ export function openPicker(key: keyof Settings, onClose: () => void) {
     item.setAttribute("role", "option");
     applyPreviewStyle(item, key, value);
 
+    // Selecting a value previews it and keeps the picker open — the user
+    // needs to see the result before deciding to dismiss it themselves
+    // (click away or the close button). Only Escape closes it directly.
     item.addEventListener("click", () => {
       setSetting(key, value);
-      closePicker();
+      pickerDrag.centerOn(item);
+      item.focus();
+      updateActiveItem();
     });
     item.addEventListener("keydown", (e) => {
       if (e.key === "Enter" || e.key === " ") {
         e.preventDefault();
         setSetting(key, value);
-        closePicker();
+        pickerDrag.centerOn(item);
+        updateActiveItem();
       } else if (e.key === "ArrowRight") {
         e.preventDefault();
         focusSibling(item, 1);

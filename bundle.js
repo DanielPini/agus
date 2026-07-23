@@ -847,13 +847,16 @@ is speaking.
       applyPreviewStyle(item, key, value);
       item.addEventListener("click", () => {
         setSetting(key, value);
-        closePicker();
+        pickerDrag.centerOn(item);
+        item.focus();
+        updateActiveItem();
       });
       item.addEventListener("keydown", (e) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
           setSetting(key, value);
-          closePicker();
+          pickerDrag.centerOn(item);
+          updateActiveItem();
         } else if (e.key === "ArrowRight") {
           e.preventDefault();
           focusSibling(item, 1);

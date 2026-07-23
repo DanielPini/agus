@@ -20,25 +20,19 @@
   min-height: 100vh;
 }
 
-/* Pinned to a fixed height rather than sizing to content — auto-sizing here
-   (flex:0 0 auto / height:fit-content) was producing far more height than
-   the actual text needs once the settings capsules render for real, and
-   fighting that with more layout cleverness isn't worth it. Content that
-   somehow needs more than this just overflows visibly rather than being
-   clipped — no `overflow: hidden` here.
-   min-height:0 is required here: flex items default to min-height:auto
-   (content-based), which silently overrides an explicit flex-basis and
-   forces the box to grow to fit its content anyway — exactly undoing the
-   400px pin above once the settings capsules render for real. */
+/* Sized to its own content — a fixed height here doesn't push .play-section
+   down when content is taller than the pin, it just visually overflows
+   into it, and .play-section (position:relative) then paints on top of
+   that overflow regardless of DOM order. The settings menu needs to sit
+   directly under the blurb in normal flow, so content-sizing is the
+   correct approach, not a pin. */
 .agus-scope .text-section {
   display: flex;
-  flex: 0 0 400px;
-  min-height: 0;
+  flex: 0 0 auto;
   flex-flow: row;
   width: 100%;
   margin-top: 100px;
   justify-content: center;
-  overflow: visible;
   padding: 0 20px;
 }
 
@@ -100,7 +94,6 @@
 
 @media (max-width: 780px) {
   .agus-scope .text-section {
-    flex-basis: 350px;
     margin-top: 20px;
   }
 
