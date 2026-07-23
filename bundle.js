@@ -1,40 +1,115 @@
 "use strict";
 (() => {
+  // dom.ts
+  function buildApp() {
+    document.body.style.overflow = "hidden";
+    document.body.insertAdjacentHTML(
+      "beforeend",
+      `
+    <div id="agus-root" class="agus-scope">
+      <div class="page-wrapper">
+        <section class="text-section">
+          <div class="text-column">
+            <article class="blurb">
+              <h2>Subtitles</h2>
+              <h3>Agus Wijaya</h3>
+              <pre style="font-family: Helvetica, sans-serif">
+A video plays on loop.
+A system of subtitles
+describes, anticipates
+and misreads what is
+happening. They produce
+meaning rather than
+clarify. It becomes
+unclear what is being
+described, or who
+is speaking.
+              </pre>
+            </article>
+            <nav class="settings-menu-inline" id="settings-inline" aria-label="Settings"></nav>
+          </div>
+        </section>
+        <div class="play-section">
+          <h2 class="play-button">Play</h2>
+        </div>
+      </div>
+      <div class="video-container">
+        <button class="close-button" aria-label="Close video">&times;</button>
+        <div class="video-wrapper">
+          <div id="vimeo-player"></div>
+          <div class="video-click-target"></div>
+        </div>
+      </div>
+      <button
+        class="burger-button"
+        id="burger-button"
+        aria-label="Open settings"
+        aria-expanded="false"
+      >
+        &#9776;
+      </button>
+      <nav
+        class="settings-menu-floating"
+        id="settings-floating"
+        aria-label="Settings"
+        hidden
+      ></nav>
+      <div class="settings-picker" id="settings-picker" hidden>
+        <button class="picker-close" id="picker-close" aria-label="Close">
+          &larr; Back
+        </button>
+        <div class="picker-track" id="picker-track" role="listbox">
+          <div class="picker-track-inner" id="picker-track-inner"></div>
+        </div>
+      </div>
+    </div>
+    `
+    );
+    return document.getElementById("agus-root");
+  }
+
   // video.ts
-  var videoWrapper = document.querySelector(".video-wrapper");
-  var videoContainer = document.querySelector(".video-container");
-  var playButton = document.querySelector(".play-button");
-  var closeButton = document.querySelector(".close-button");
-  var videoClickTarget = document.querySelector(".video-click-target");
-  var player = new Vimeo.Player("vimeo-player", {
-    url: "https://vimeo.com/1209314643/8e3ff1a4bd",
-    autoplay: true,
-    muted: true,
-    loop: true,
-    playsinline: true,
-    controls: false,
-    title: false,
-    byline: false,
-    portrait: false,
-    dnt: true
-  });
+  var videoWrapper;
+  var videoContainer;
+  var playButton;
+  var closeButton;
+  var videoClickTarget;
+  var player = null;
+  var pendingPlayerEvents = [];
+  function onPlayerEvent(event, fn) {
+    if (player) player.on(event, fn);
+    else pendingPlayerEvents.push([event, fn]);
+  }
+  function loadVimeoSdk() {
+    if (typeof Vimeo !== "undefined") return Promise.resolve();
+    return new Promise((resolve, reject) => {
+      const script = document.createElement("script");
+      script.src = "https://player.vimeo.com/api/player.js";
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error("Failed to load Vimeo Player SDK"));
+      document.head.append(script);
+    });
+  }
   var currentTime = 0;
   function pollTime() {
+    if (!player) return;
     player.getCurrentTime().then((t) => currentTime = t);
     requestAnimationFrame(pollTime);
   }
-  pollTime();
   var isPaused = false;
-  player.on("pause", () => {
-    isPaused = true;
-  });
-  player.on("play", () => {
-    isPaused = false;
-  });
+  var loopCount = 1;
+  var loopListeners = [];
+  function restartLoop(nextLoopCount) {
+    loopCount = nextLoopCount;
+    if (player) player.setCurrentTime(0).then(() => player.play());
+    loopListeners.forEach((fn) => fn());
+  }
   var videoPlayer = {
     getCurrentTime: () => currentTime,
-    onPause: (fn) => player.on("pause", fn),
-    onPlay: (fn) => player.on("play", fn)
+    getLoopCount: () => loopCount,
+    onPause: (fn) => onPlayerEvent("pause", fn),
+    onPlay: (fn) => onPlayerEvent("play", fn),
+    onLoop: (fn) => loopListeners.push(fn)
   };
   var closeListeners = [];
   function onVideoClose(fn) {
@@ -45,8 +120,14 @@
     document.body.classList.toggle("video-open", open);
     if (!open) closeListeners.forEach((fn) => fn());
   }
-  function initVideoPlayer() {
+  async function initVideoPlayer(root) {
+    videoWrapper = root.querySelector(".video-wrapper");
+    videoContainer = root.querySelector(".video-container");
+    playButton = root.querySelector(".play-button");
+    closeButton = root.querySelector(".close-button");
+    videoClickTarget = root.querySelector(".video-click-target");
     playButton.addEventListener("click", () => {
+      restartLoop(1);
       setVideoOpen(true);
     });
     closeButton.addEventListener("click", () => {
@@ -58,603 +139,349 @@
       }
     });
     videoClickTarget.addEventListener("click", () => {
+      if (!player) return;
       if (isPaused) player.play();
       else player.pause();
+    });
+    await loadVimeoSdk();
+    player = new Vimeo.Player("vimeo-player", {
+      url: "https://vimeo.com/1209314643/8e3ff1a4bd",
+      autoplay: true,
+      muted: true,
+      loop: true,
+      playsinline: true,
+      controls: false,
+      title: false,
+      byline: false,
+      portrait: false,
+      dnt: true
+    });
+    pendingPlayerEvents.forEach(([event, fn]) => player.on(event, fn));
+    pendingPlayerEvents.length = 0;
+    pollTime();
+    player.on("pause", () => {
+      isPaused = true;
+    });
+    player.on("play", () => {
+      isPaused = false;
+    });
+    player.on("ended", () => {
+      restartLoop(loopCount + 1);
     });
   }
 
   // captions-data.ts
+  function parseTimestamps(timestamps) {
+    const match = timestamps.match(
+      /^(\d{2}):(\d{2}):(\d{2})\s*—\s*(\d{2}):(\d{2}):(\d{2})$/
+    );
+    if (!match) throw new Error(`Unrecognized timestamp format: "${timestamps}"`);
+    const [, m1, s1, f1, m2, s2, f2] = match;
+    const toMs = (m, s, f) => (Number(m) * 60 + Number(s) + Number(f) / 60) * 1e3;
+    const timeStart = toMs(m1, s1, f1);
+    const timeEnd = toMs(m2, s2, f2);
+    return { timeStart, duration: timeEnd - timeStart };
+  }
+  function caption(id, timestamps, text) {
+    return { id, timestamps, text, ...parseTimestamps(timestamps) };
+  }
   var captions = [
-    {
-      id: 1,
-      timestamps: "00:00:45 \u2014 00:03:24",
-      text: {
-        english: "This was not intended to be remembered",
-        french: "Ceci n\u2019\xE9tait pas destin\xE9 \xE0 \xEAtre m\xE9moris\xE9",
-        german: "Dies war nicht dazu bestimmt, erinnert zu werden",
-        indonesian: "Ini tidak dimaksudkan untuk diingat"
-      },
-      timeStart: 45 / 60 * 100,
-      duration: 1200
-    },
-    {
-      id: 2,
-      timestamps: "00:04:05 \u2014 00:05:38",
-      text: {
-        english: "They\u2019ve given this various names.",
-        french: "On lui a donn\xE9 plusieurs noms.",
-        german: "Man hat dem verschiedene Namen gegeben.",
-        indonesian: "Ini telah diberi berbagai nama."
-      },
-      timeStart: 4 * 1e3 + 5 / 60 * 100,
-      duration: 600
-    },
-    {
-      id: 3,
-      timestamps: "00:07:02 \u2014 00:07:38",
-      text: {
-        english: "You are looking for clarity.",
-        french: "Tu cherches la clart\xE9.",
-        german: "Du suchst nach Klarheit.",
-        indonesian: "Kamu sedang mencari kejelasan."
-      },
-      timeStart: 7 * 1e3 + 2 / 60 * 100,
-      duration: 400
-    },
-    {
-      id: 4,
-      timestamps: "00:07:39 \u2014 00:07:55",
-      text: {
-        english: "This may not be important.",
-        french: "Ce n\u2019est peut-\xEAtre pas important.",
-        german: "Das ist vielleicht nicht wichtig.",
-        indonesian: "Ini mungkin tidak penting."
-      },
-      timeStart: 7 * 1e3 + 39 / 60 * 100,
-      duration: 1200
-    },
-    {
-      id: 5,
-      timestamps: "00:07:56 \u2014 00:09:01",
-      text: {
-        english: "You are moving too fast.",
-        french: "Tu vas trop vite.",
-        german: "Du bewegst dich zu schnell.",
-        indonesian: "Kamu bergerak terlalu cepat."
-      },
-      timeStart: 7 * 1e3 + 56 / 60 * 100,
-      duration: 1200
-    },
-    {
-      id: 6,
-      timestamps: "00:09:53 \u2014 00:11:49",
-      text: {
-        english: "Stillness is often mistaken for depth.",
-        french: "L\u2019immobilit\xE9 est souvent confondue avec la profondeur.",
-        german: "Stille wird oft mit Tiefe verwechselt.",
-        indonesian: "Diam sering disalahartikan sebagai kedalaman."
-      },
-      timeStart: 9 * 1e3 + 53 / 60 * 100,
-      duration: 1200
-    },
-    {
-      id: 7,
-      timestamps: "00:15:07 \u2014 00:16:00",
-      text: {
-        english: "This has already occured.",
-        french: "Ceci s\u2019est d\xE9j\xE0 produit.",
-        german: "Dies ist bereits geschehen.",
-        indonesian: "Ini sudah terjadi."
-      },
-      timeStart: 15 * 1e3 + 7 / 60 * 100,
-      duration: 1200
-    },
-    {
-      id: 8,
-      timestamps: "00:19:00 \u2014 00:20:59",
-      text: {
-        english: "00:19-00.21 (time dilates)",
-        french: "00:19-00.21 (le temps se dilate)",
-        german: "00:19-00.21 (die Zeit dehnt sich)",
-        indonesian: "00:19-00.21 (waktu melambat)"
-      },
-      timeStart: 19 * 1e3,
-      duration: 1200
-    },
-    {
-      id: 9,
-      timestamps: "00:23:29 \u2014 00:25:03",
-      text: {
-        english: "[something changes off-screen]",
-        french: "[quelque chose change hors champ]",
-        german: "[etwas ver\xE4ndert sich au\xDFerhalb des Bildes]",
-        indonesian: "[sesuatu berubah di luar layar]"
-      },
-      timeStart: 23 * 1e3 + 29 / 60 * 100,
-      duration: 1200
-    },
-    {
-      id: 10,
-      timestamps: "00:26:14 \u2014 00:28:44",
-      text: {
-        english: '"Are you talking to yourself?"',
-        french: "\xAB Tu te parles \xE0 toi-m\xEAme ? \xBB",
-        german: "\u201ERedest du mit dir selbst?\u201C",
-        indonesian: '"Apakah kamu bicara sendiri?"'
-      },
-      timeStart: 26 * 1e3 + 14 / 60 * 100,
-      duration: 1200
-    },
-    {
-      id: 11,
-      timestamps: "00:31:00 \u2014 00:31:15",
-      text: {
-        english: "ths sctn hs bn rdc",
-        french: "ctt sctn a \xE9t\xE9 rdg\xE9e",
-        german: "dsr abschntt wrd geschwrzt",
-        indonesian: "bgn ini tlh disnsor"
-      },
-      timeStart: 31 * 1e3,
-      duration: 1200
-    },
-    {
-      id: 12,
-      timestamps: "00:34:15 \u2014 00:36:53",
-      text: {
-        english: "what were we?",
-        french: "qu\u2019\xE9tions-nous ?",
-        german: "was waren wir?",
-        indonesian: "apa kita dulu?"
-      },
-      timeStart: 34 * 1e3 + 15 / 60 * 100,
-      duration: 1200
-    },
-    {
-      id: 13,
-      timestamps: "00:40:00 \u2014 00:41:51",
-      text: {
-        english: "Some shot lingers too long.",
-        french: "Un plan s\u2019attarde trop longtemps.",
-        german: "Eine Einstellung verweilt zu lange.",
-        indonesian: "Satu adegan bertahan terlalu lama."
-      },
-      timeStart: 40 * 1e3,
-      duration: 1200
-    },
-    {
-      id: 14,
-      timestamps: "00:43:20 \u2014 00:45:59",
-      text: {
-        english: "You are waiting for something to happen.",
-        french: "Tu attends que quelque chose se passe.",
-        german: "Du wartest darauf, dass etwas geschieht.",
-        indonesian: "Kamu menunggu sesuatu terjadi."
-      },
-      timeStart: 43 * 1e3 + 20 / 60 * 100,
-      duration: 1200
-    },
-    {
-      id: 15,
-      timestamps: "00:50:57 \u2014 00:53:59",
-      text: {
-        english: "A portrait video rotated landscape.",
-        french: "Une vid\xE9o portrait tourn\xE9e en paysage.",
-        german: "Ein Hochformatvideo, ins Querformat gedreht.",
-        indonesian: "Video potret yang diputar menjadi lanskap."
-      },
-      timeStart: 50 * 1e3 + 57 / 60 * 100,
-      duration: 1200
-    },
-    {
-      id: 16,
-      timestamps: "00:55:53 \u2014 00:56:29",
-      text: {
-        english: "IMG_2392.MOV is playing.",
-        french: "IMG_2392.MOV est en lecture.",
-        german: "IMG_2392.MOV wird abgespielt.",
-        indonesian: "IMG_2392.MOV sedang diputar."
-      },
-      timeStart: 55 * 1e3 + 53 / 60 * 100,
-      duration: 1200
-    },
-    {
-      id: 17,
-      timestamps: "00:56:30 \u2014 00:58:19",
-      text: {
-        english: "IMG_4656.MOV is playing.",
-        french: "IMG_4656.MOV est en lecture.",
-        german: "IMG_4656.MOV wird abgespielt.",
-        indonesian: "IMG_4656.MOV sedang diputar."
-      },
-      timeStart: 56 * 1e3 + 30 / 60 * 100,
-      duration: 1200
-    },
-    {
-      id: 18,
-      timestamps: "01:07:43 \u2014 01:08:40",
-      text: {
-        english: "This was demolished in 2021.",
-        french: "Ceci a \xE9t\xE9 d\xE9moli en 2021.",
-        german: "Dies wurde 2021 abgerissen.",
-        indonesian: "Ini dirobohkan pada tahun 2021."
-      },
-      timeStart: 1 * 60 * 1e3 + 7 * 1e3 + 43 / 60 * 100,
-      duration: 1200
-    },
-    {
-      id: 19,
-      timestamps: "01:17:35 \u2014 01:18:59",
-      text: {
-        english: "Are you still willing?",
-        french: "Es-tu toujours pr\xEAt(e) ?",
-        german: "Bist du noch bereit?",
-        indonesian: "Apakah kamu masih bersedia?"
-      },
-      timeStart: 1 * 60 * 1e3 + 17 * 1e3 + 35 / 60 * 100,
-      duration: 1200
-    },
-    {
-      id: 20,
-      timestamps: "01:22:44 \u2014 01:24:19",
-      text: {
-        english: "This was about 5,500km from here.",
-        french: "C\u2019\xE9tait \xE0 environ 5 500 km d\u2019ici.",
-        german: "Das war etwa 5.500 km von hier entfernt.",
-        indonesian: "Ini sekitar 5.500 km dari sini."
-      },
-      timeStart: 1 * 60 * 1e3 + 22 * 1e3 + 44 / 60 * 100,
-      duration: 1200
-    },
-    {
-      id: 21,
-      timestamps: "01:24:20 \u2014 01:26:20",
-      text: {
-        english: "Prayer for all beings.",
-        french: "Pri\xE8re pour tous les \xEAtres.",
-        german: "Gebet f\xFCr alle Wesen.",
-        indonesian: "Doa untuk semua makhluk."
-      },
-      timeStart: 1 * 60 * 1e3 + 24 * 1e3 + 20 / 60 * 100,
-      duration: 1200
-    },
-    {
-      id: 22,
-      timestamps: "01:29:10 \u2014 01:30:34",
-      text: {
-        english: "[silence continues]",
-        french: "[le silence continue]",
-        german: "[die Stille h\xE4lt an]",
-        indonesian: "[keheningan berlanjut]"
-      },
-      timeStart: 1 * 60 * 1e3 + 29 * 1e3 + 10 / 60 * 100,
-      duration: 1200
-    },
-    {
-      id: 23,
-      timestamps: "01:37:47 \u2014 01:38:42",
-      text: {
-        english: "Year of the ocean...",
-        french: "Ann\xE9e de l\u2019oc\xE9an...",
-        german: "Jahr des Ozeans...",
-        indonesian: "Tahun laut..."
-      },
-      timeStart: 1 * 60 * 1e3 + 37 * 1e3 + 47 / 60 * 100,
-      duration: 1200
-    },
-    {
-      id: 24,
-      timestamps: "01:38:43 \u2014 01:40:27",
-      text: {
-        english: "I remember there was a hill behind.",
-        french: "Je me souviens qu\u2019il y avait une colline derri\xE8re.",
-        german: "Ich erinnere mich, dass dahinter ein H\xFCgel war.",
-        indonesian: "Aku ingat dulu ada bukit di belakang."
-      },
-      timeStart: 1 * 60 * 1e3 + 38 * 1e3 + 43 / 60 * 100,
-      duration: 1200
-    },
-    {
-      id: 25,
-      timestamps: "01:46:41 \u2014 01:48:27",
-      text: {
-        english: "[seen]",
-        french: "[vu]",
-        german: "[gesehen]",
-        indonesian: "[terlihat]"
-      },
-      timeStart: 1 * 60 * 1e3 + 46 * 1e3 + 41 / 60 * 100,
-      duration: 1200
-    }
+    caption(1, "00:00:45 \u2014 00:03:24", {
+      english: "This was not intended to be remembered",
+      french: "Ceci n\u2019\xE9tait pas destin\xE9 \xE0 \xEAtre m\xE9moris\xE9",
+      german: "Dies war nicht dazu bestimmt, erinnert zu werden",
+      indonesian: "Ini tidak dimaksudkan untuk diingat"
+    }),
+    caption(2, "00:04:05 \u2014 00:05:38", {
+      english: "They\u2019ve given this various names.",
+      french: "On lui a donn\xE9 plusieurs noms.",
+      german: "Man hat dem verschiedene Namen gegeben.",
+      indonesian: "Ini telah diberi berbagai nama."
+    }),
+    caption(3, "00:07:02 \u2014 00:07:38", {
+      english: "You are looking for clarity.",
+      french: "Tu cherches la clart\xE9.",
+      german: "Du suchst nach Klarheit.",
+      indonesian: "Kamu sedang mencari kejelasan."
+    }),
+    caption(4, "00:07:39 \u2014 00:07:55", {
+      english: "This may not be important.",
+      french: "Ce n\u2019est peut-\xEAtre pas important.",
+      german: "Das ist vielleicht nicht wichtig.",
+      indonesian: "Ini mungkin tidak penting."
+    }),
+    caption(5, "00:07:56 \u2014 00:09:01", {
+      english: "You are moving too fast.",
+      french: "Tu vas trop vite.",
+      german: "Du bewegst dich zu schnell.",
+      indonesian: "Kamu bergerak terlalu cepat."
+    }),
+    caption(6, "00:09:53 \u2014 00:11:49", {
+      english: "Stillness is often mistaken for depth.",
+      french: "L\u2019immobilit\xE9 est souvent confondue avec la profondeur.",
+      german: "Stille wird oft mit Tiefe verwechselt.",
+      indonesian: "Diam sering disalahartikan sebagai kedalaman."
+    }),
+    caption(7, "00:15:07 \u2014 00:16:00", {
+      english: "This has already occured.",
+      french: "Ceci s\u2019est d\xE9j\xE0 produit.",
+      german: "Dies ist bereits geschehen.",
+      indonesian: "Ini sudah terjadi."
+    }),
+    caption(8, "00:19:00 \u2014 00:20:59", {
+      english: "00:19-00.21 (time dilates)",
+      french: "00:19-00.21 (le temps se dilate)",
+      german: "00:19-00.21 (die Zeit dehnt sich)",
+      indonesian: "00:19-00.21 (waktu melambat)"
+    }),
+    caption(9, "00:23:29 \u2014 00:25:03", {
+      english: "[something changes off-screen]",
+      french: "[quelque chose change hors champ]",
+      german: "[etwas ver\xE4ndert sich au\xDFerhalb des Bildes]",
+      indonesian: "[sesuatu berubah di luar layar]"
+    }),
+    caption(10, "00:26:14 \u2014 00:28:44", {
+      english: '"Are you talking to yourself?"',
+      french: "\xAB Tu te parles \xE0 toi-m\xEAme ? \xBB",
+      german: "\u201ERedest du mit dir selbst?\u201C",
+      indonesian: '"Apakah kamu bicara sendiri?"'
+    }),
+    caption(11, "00:31:00 \u2014 00:31:15", {
+      english: "ths sctn hs bn rdc",
+      french: "ctt sctn a \xE9t\xE9 rdg\xE9e",
+      german: "dsr abschntt wrd geschwrzt",
+      indonesian: "bgn ini tlh disnsor"
+    }),
+    caption(12, "00:34:15 \u2014 00:36:53", {
+      english: "what were we?",
+      french: "qu\u2019\xE9tions-nous ?",
+      german: "was waren wir?",
+      indonesian: "apa kita dulu?"
+    }),
+    caption(13, "00:40:00 \u2014 00:41:51", {
+      english: "Some shot lingers too long.",
+      french: "Un plan s\u2019attarde trop longtemps.",
+      german: "Eine Einstellung verweilt zu lange.",
+      indonesian: "Satu adegan bertahan terlalu lama."
+    }),
+    caption(14, "00:43:20 \u2014 00:45:59", {
+      english: "You are waiting for something to happen.",
+      french: "Tu attends que quelque chose se passe.",
+      german: "Du wartest darauf, dass etwas geschieht.",
+      indonesian: "Kamu menunggu sesuatu terjadi."
+    }),
+    caption(15, "00:50:57 \u2014 00:53:59", {
+      english: "A portrait video rotated landscape.",
+      french: "Une vid\xE9o portrait tourn\xE9e en paysage.",
+      german: "Ein Hochformatvideo, ins Querformat gedreht.",
+      indonesian: "Video potret yang diputar menjadi lanskap."
+    }),
+    caption(16, "00:55:53 \u2014 00:56:29", {
+      english: "IMG_2392.MOV is playing.",
+      french: "IMG_2392.MOV est en lecture.",
+      german: "IMG_2392.MOV wird abgespielt.",
+      indonesian: "IMG_2392.MOV sedang diputar."
+    }),
+    caption(17, "00:56:30 \u2014 00:58:19", {
+      english: "IMG_4656.MOV is playing.",
+      french: "IMG_4656.MOV est en lecture.",
+      german: "IMG_4656.MOV wird abgespielt.",
+      indonesian: "IMG_4656.MOV sedang diputar."
+    }),
+    caption(18, "01:07:43 \u2014 01:08:40", {
+      english: "This was demolished in 2021.",
+      french: "Ceci a \xE9t\xE9 d\xE9moli en 2021.",
+      german: "Dies wurde 2021 abgerissen.",
+      indonesian: "Ini dirobohkan pada tahun 2021."
+    }),
+    caption(19, "01:17:35 \u2014 01:18:59", {
+      english: "Are you still willing?",
+      french: "Es-tu toujours pr\xEAt(e) ?",
+      german: "Bist du noch bereit?",
+      indonesian: "Apakah kamu masih bersedia?"
+    }),
+    caption(20, "01:22:44 \u2014 01:24:19", {
+      english: "This was about 5,500km from here.",
+      french: "C\u2019\xE9tait \xE0 environ 5 500 km d\u2019ici.",
+      german: "Das war etwa 5.500 km von hier entfernt.",
+      indonesian: "Ini sekitar 5.500 km dari sini."
+    }),
+    caption(21, "01:24:20 \u2014 01:26:20", {
+      english: "Prayer for all beings.",
+      french: "Pri\xE8re pour tous les \xEAtres.",
+      german: "Gebet f\xFCr alle Wesen.",
+      indonesian: "Doa untuk semua makhluk."
+    }),
+    caption(22, "01:29:10 \u2014 01:30:34", {
+      english: "[silence continues]",
+      french: "[le silence continue]",
+      german: "[die Stille h\xE4lt an]",
+      indonesian: "[keheningan berlanjut]"
+    }),
+    caption(23, "01:37:47 \u2014 01:38:42", {
+      english: "Year of the ocean...",
+      french: "Ann\xE9e de l\u2019oc\xE9an...",
+      german: "Jahr des Ozeans...",
+      indonesian: "Tahun laut..."
+    }),
+    caption(24, "01:38:43 \u2014 01:40:27", {
+      english: "I remember there was a hill behind.",
+      french: "Je me souviens qu\u2019il y avait une colline derri\xE8re.",
+      german: "Ich erinnere mich, dass dahinter ein H\xFCgel war.",
+      indonesian: "Aku ingat dulu ada bukit di belakang."
+    }),
+    caption(25, "01:46:41 \u2014 01:48:27", {
+      english: "[seen]",
+      french: "[vu]",
+      german: "[gesehen]",
+      indonesian: "[terlihat]"
+    })
   ];
   var captionsLoop2 = [
-    {
-      id: 1,
-      timestamps: "00:00:45 \u2014 00:03:05",
-      text: {
-        english: "This has already occured.",
-        french: "Ceci s\u2019est d\xE9j\xE0 produit.",
-        german: "Dies ist bereits geschehen.",
-        indonesian: "Ini sudah terjadi."
-      },
-      timeStart: 45 / 60 * 100,
-      duration: 1200
-    },
-    {
-      id: 2,
-      timestamps: "00:03:46 \u2014 00:05:24",
-      text: {
-        english: "You remembered it anyway",
-        french: "Tu t\u2019en es souvenu quand m\xEAme",
-        german: "Du hast dich trotzdem daran erinnert",
-        indonesian: "Kamu tetap mengingatnya"
-      },
-      timeStart: 4 * 1e3 + 5 / 60 * 100,
-      duration: 600
-    },
-    {
-      id: 3,
-      timestamps: "00:06:33 \u2014 00:07:44",
-      text: {
-        english: "You are still looking for clarity.",
-        french: "Tu cherches encore la clart\xE9.",
-        german: "Du suchst immer noch nach Klarheit.",
-        indonesian: "Kamu masih mencari kejelasan."
-      },
-      timeStart: 7 * 1e3 + 2 / 60 * 100,
-      duration: 400
-    },
-    {
-      id: 4,
-      timestamps: "00:07:48 \u2014 00:08:50",
-      text: {
-        english: "This may not be important.",
-        french: "Ce n\u2019est peut-\xEAtre pas important.",
-        german: "Das ist vielleicht nicht wichtig.",
-        indonesian: "Ini mungkin tidak penting."
-      },
-      timeStart: 7 * 1e3 + 39 / 60 * 100,
-      duration: 1200
-    },
-    {
-      id: 5,
-      timestamps: "00:09:53 \u2014 00:11:49",
-      text: {
-        english: "Stillness is often mistaken for depth.",
-        french: "L\u2019immobilit\xE9 est souvent confondue avec la profondeur.",
-        german: "Stille wird oft mit Tiefe verwechselt.",
-        indonesian: "Diam sering disalahartikan sebagai kedalaman."
-      },
-      timeStart: 7 * 1e3 + 56 / 60 * 100,
-      duration: 1200
-    },
-    {
-      id: 6,
-      timestamps: "00:15:07 \u2014 00:16:00",
-      text: {
-        english: "xx px/s",
-        french: "xx px/s",
-        german: "xx px/s",
-        indonesian: "xx px/s"
-      },
-      timeStart: 9 * 1e3 + 53 / 60 * 100,
-      duration: 1200
-    },
-    {
-      id: 7,
-      timestamps: "00:19:00 \u2014 00:20:59",
-      text: {
-        english: "(time dilates)",
-        french: "(le temps se dilate)",
-        german: "(die Zeit dehnt sich)",
-        indonesian: "(waktu melambat)"
-      },
-      timeStart: 15 * 1e3 + 7 / 60 * 100,
-      duration: 1200
-    },
-    {
-      id: 8,
-      timestamps: "00:23:29 \u2014 00:25:03",
-      text: {
-        english: "[something changes off-screen]",
-        french: "[quelque chose change hors champ]",
-        german: "[etwas ver\xE4ndert sich au\xDFerhalb des Bildes]",
-        indonesian: "[sesuatu berubah di luar layar]"
-      },
-      timeStart: 19 * 1e3,
-      duration: 1200
-    },
-    {
-      id: 9,
-      timestamps: "00:26:14 \u2014 00:28:44",
-      text: {
-        english: '"Are you talking to yourself?"',
-        french: "\xAB Tu te parles \xE0 toi-m\xEAme ? \xBB",
-        german: "\u201ERedest du mit dir selbst?\u201C",
-        indonesian: '"Apakah kamu bicara sendiri?"'
-      },
-      timeStart: 23 * 1e3 + 29 / 60 * 100,
-      duration: 1200
-    },
-    {
-      id: 10,
-      timestamps: "00:31:00 \u2014 00:31:15",
-      text: {
-        english: "ths sctn hs bn rdc",
-        french: "ctt sctn a \xE9t\xE9 rdg\xE9e",
-        german: "dsr abschntt wrd geschwrzt",
-        indonesian: "bgn ini tlh disnsor"
-      },
-      timeStart: 26 * 1e3 + 14 / 60 * 100,
-      duration: 1200
-    },
-    {
-      id: 13,
-      timestamps: "00:34:15 \u2014 00:36:53",
-      text: {
-        english: "what were we?",
-        french: "qu\u2019\xE9tions-nous ?",
-        german: "was waren wir?",
-        indonesian: "apa kita dulu?"
-      },
-      timeStart: 34 * 1e3 + 15 / 60 * 100,
-      duration: 1200
-    },
-    {
-      id: 14,
-      timestamps: "00:40:00 \u2014 00:41:51",
-      text: {
-        english: "Some shot lingers too long.",
-        french: "Un plan s\u2019attarde trop longtemps.",
-        german: "Eine Einstellung verweilt zu lange.",
-        indonesian: "Satu adegan bertahan terlalu lama."
-      },
-      timeStart: 40 * 1e3,
-      duration: 1200
-    },
-    {
-      id: 15,
-      timestamps: "00:43:20 \u2014 00:45:19",
-      text: {
-        english: "Something may have already happened.",
-        french: "Quelque chose s\u2019est peut-\xEAtre d\xE9j\xE0 produit.",
-        german: "Etwas ist vielleicht schon geschehen.",
-        indonesian: "Sesuatu mungkin sudah terjadi."
-      },
-      timeStart: 43 * 1e3 + 20 / 60 * 100,
-      duration: 1200
-    },
-    {
-      id: 16,
-      timestamps: "00:50:57 \u2014 00:53:45",
-      text: {
-        english: ">> time stamp",
-        french: ">> horodatage",
-        german: ">> Zeitstempel",
-        indonesian: ">> stempel waktu"
-      },
-      timeStart: 50 * 1e3 + 57 / 60 * 100,
-      duration: 1200
-    },
-    {
-      id: 17,
-      timestamps: "00:55:53 \u2014 00:56:29",
-      text: {
-        english: "IMG_2392.MOV is playing.",
-        french: "IMG_2392.MOV est en lecture.",
-        german: "IMG_2392.MOV wird abgespielt.",
-        indonesian: "IMG_2392.MOV sedang diputar."
-      },
-      timeStart: 55 * 1e3 + 53 / 60 * 100,
-      duration: 1200
-    },
-    {
-      id: 18,
-      timestamps: "00:56:30 \u2014 00:58:19",
-      text: {
-        english: "IMG_4656.MOV is playing.",
-        french: "IMG_4656.MOV est en lecture.",
-        german: "IMG_4656.MOV wird abgespielt.",
-        indonesian: "IMG_4656.MOV sedang diputar."
-      },
-      timeStart: 56 * 1e3 + 30 / 60 * 100,
-      duration: 1200
-    },
-    {
-      id: 19,
-      timestamps: "01:07:43 \u2014 01:08:40",
-      text: {
-        english: "This was demolished in 2021.",
-        french: "Ceci a \xE9t\xE9 d\xE9moli en 2021.",
-        german: "Dies wurde 2021 abgerissen.",
-        indonesian: "Ini dirobohkan pada tahun 2021."
-      },
-      timeStart: 1 * 60 * 1e3 + 7 * 1e3 + 43 / 60 * 100,
-      duration: 1200
-    },
-    {
-      id: 20,
-      timestamps: "01:17:35 \u2014 01:18:59",
-      text: {
-        english: "Are you still willing?",
-        french: "Es-tu toujours pr\xEAt(e) ?",
-        german: "Bist du noch bereit?",
-        indonesian: "Apakah kamu masih bersedia?"
-      },
-      timeStart: 1 * 60 * 1e3 + 17 * 1e3 + 35 / 60 * 100,
-      duration: 1200
-    },
-    {
-      id: 21,
-      timestamps: "01:21:15 \u2014 01:22:43",
-      text: {
-        english: "How\u2019s this relevant here?",
-        french: "En quoi est-ce pertinent ici ?",
-        german: "Was hat das hiermit zu tun?",
-        indonesian: "Apa relevansinya di sini?"
-      },
-      timeStart: 1 * 60 * 1e3 + 22 * 1e3 + 44 / 60 * 100,
-      duration: 1200
-    },
-    {
-      id: 22,
-      timestamps: "01:24:20 \u2014 01:26:20",
-      text: {
-        english: "Prayer for all beings.",
-        french: "Pri\xE8re pour tous les \xEAtres.",
-        german: "Gebet f\xFCr alle Wesen.",
-        indonesian: "Doa untuk semua makhluk."
-      },
-      timeStart: 1 * 60 * 1e3 + 24 * 1e3 + 20 / 60 * 100,
-      duration: 1200
-    },
-    {
-      id: 23,
-      timestamps: "01:29:10 \u2014 01:30:34",
-      text: {
-        english: "[silence continues]",
-        french: "[le silence continue]",
-        german: "[die Stille h\xE4lt an]",
-        indonesian: "[keheningan berlanjut]"
-      },
-      timeStart: 1 * 60 * 1e3 + 29 * 1e3 + 10 / 60 * 100,
-      duration: 1200
-    },
-    {
-      id: 24,
-      timestamps: "01:37:47 \u2014 01:38:42",
-      text: {
-        english: "Year of the ocean...",
-        french: "Ann\xE9e de l\u2019oc\xE9an...",
-        german: "Jahr des Ozeans...",
-        indonesian: "Tahun laut..."
-      },
-      timeStart: 1 * 60 * 1e3 + 37 * 1e3 + 47 / 60 * 100,
-      duration: 1200
-    },
-    {
-      id: 25,
-      timestamps: "01:38:43 \u2014 01:40:27",
-      text: {
-        english: ">> activity",
-        french: ">> activit\xE9",
-        german: ">> Aktivit\xE4t",
-        indonesian: ">> aktivitas"
-      },
-      timeStart: 1 * 60 * 1e3 + 38 * 1e3 + 43 / 60 * 100,
-      duration: 1200
-    },
-    {
-      id: 26,
-      timestamps: "01:45:38 \u2014 01:48:27",
-      text: {
-        english: "You have already seen this.",
-        french: "Tu as d\xE9j\xE0 vu ceci.",
-        german: "Du hast das schon gesehen.",
-        indonesian: "Kamu sudah melihat ini sebelumnya."
-      },
-      timeStart: 1 * 60 * 1e3 + 46 * 1e3 + 41 / 60 * 100,
-      duration: 1200
-    }
+    caption(1, "00:00:45 \u2014 00:03:05", {
+      english: "This has already occured.",
+      french: "Ceci s\u2019est d\xE9j\xE0 produit.",
+      german: "Dies ist bereits geschehen.",
+      indonesian: "Ini sudah terjadi."
+    }),
+    caption(2, "00:03:46 \u2014 00:05:24", {
+      english: "You remembered it anyway",
+      french: "Tu t\u2019en es souvenu quand m\xEAme",
+      german: "Du hast dich trotzdem daran erinnert",
+      indonesian: "Kamu tetap mengingatnya"
+    }),
+    caption(3, "00:06:33 \u2014 00:07:44", {
+      english: "You are still looking for clarity.",
+      french: "Tu cherches encore la clart\xE9.",
+      german: "Du suchst immer noch nach Klarheit.",
+      indonesian: "Kamu masih mencari kejelasan."
+    }),
+    caption(4, "00:07:48 \u2014 00:08:50", {
+      english: "This may not be important.",
+      french: "Ce n\u2019est peut-\xEAtre pas important.",
+      german: "Das ist vielleicht nicht wichtig.",
+      indonesian: "Ini mungkin tidak penting."
+    }),
+    caption(5, "00:09:53 \u2014 00:11:49", {
+      english: "Stillness is often mistaken for depth.",
+      french: "L\u2019immobilit\xE9 est souvent confondue avec la profondeur.",
+      german: "Stille wird oft mit Tiefe verwechselt.",
+      indonesian: "Diam sering disalahartikan sebagai kedalaman."
+    }),
+    caption(6, "00:15:07 \u2014 00:16:00", {
+      english: "xx px/s",
+      french: "xx px/s",
+      german: "xx px/s",
+      indonesian: "xx px/s"
+    }),
+    caption(7, "00:19:00 \u2014 00:20:59", {
+      english: "(time dilates)",
+      french: "(le temps se dilate)",
+      german: "(die Zeit dehnt sich)",
+      indonesian: "(waktu melambat)"
+    }),
+    caption(8, "00:23:29 \u2014 00:25:03", {
+      english: "[something changes off-screen]",
+      french: "[quelque chose change hors champ]",
+      german: "[etwas ver\xE4ndert sich au\xDFerhalb des Bildes]",
+      indonesian: "[sesuatu berubah di luar layar]"
+    }),
+    caption(9, "00:26:14 \u2014 00:28:44", {
+      english: '"Are you talking to yourself?"',
+      french: "\xAB Tu te parles \xE0 toi-m\xEAme ? \xBB",
+      german: "\u201ERedest du mit dir selbst?\u201C",
+      indonesian: '"Apakah kamu bicara sendiri?"'
+    }),
+    caption(10, "00:31:00 \u2014 00:31:15", {
+      english: "ths sctn hs bn rdc",
+      french: "ctt sctn a \xE9t\xE9 rdg\xE9e",
+      german: "dsr abschntt wrd geschwrzt",
+      indonesian: "bgn ini tlh disnsor"
+    }),
+    caption(13, "00:34:15 \u2014 00:36:53", {
+      english: "what were we?",
+      french: "qu\u2019\xE9tions-nous ?",
+      german: "was waren wir?",
+      indonesian: "apa kita dulu?"
+    }),
+    caption(14, "00:40:00 \u2014 00:41:51", {
+      english: "Some shot lingers too long.",
+      french: "Un plan s\u2019attarde trop longtemps.",
+      german: "Eine Einstellung verweilt zu lange.",
+      indonesian: "Satu adegan bertahan terlalu lama."
+    }),
+    caption(15, "00:43:20 \u2014 00:45:19", {
+      english: "Something may have already happened.",
+      french: "Quelque chose s\u2019est peut-\xEAtre d\xE9j\xE0 produit.",
+      german: "Etwas ist vielleicht schon geschehen.",
+      indonesian: "Sesuatu mungkin sudah terjadi."
+    }),
+    caption(16, "00:50:57 \u2014 00:53:45", {
+      english: ">> time stamp",
+      french: ">> horodatage",
+      german: ">> Zeitstempel",
+      indonesian: ">> stempel waktu"
+    }),
+    caption(17, "00:55:53 \u2014 00:56:29", {
+      english: "IMG_2392.MOV is playing.",
+      french: "IMG_2392.MOV est en lecture.",
+      german: "IMG_2392.MOV wird abgespielt.",
+      indonesian: "IMG_2392.MOV sedang diputar."
+    }),
+    caption(18, "00:56:30 \u2014 00:58:19", {
+      english: "IMG_4656.MOV is playing.",
+      french: "IMG_4656.MOV est en lecture.",
+      german: "IMG_4656.MOV wird abgespielt.",
+      indonesian: "IMG_4656.MOV sedang diputar."
+    }),
+    caption(19, "01:07:43 \u2014 01:08:40", {
+      english: "This was demolished in 2021.",
+      french: "Ceci a \xE9t\xE9 d\xE9moli en 2021.",
+      german: "Dies wurde 2021 abgerissen.",
+      indonesian: "Ini dirobohkan pada tahun 2021."
+    }),
+    caption(20, "01:17:35 \u2014 01:18:59", {
+      english: "Are you still willing?",
+      french: "Es-tu toujours pr\xEAt(e) ?",
+      german: "Bist du noch bereit?",
+      indonesian: "Apakah kamu masih bersedia?"
+    }),
+    caption(21, "01:21:15 \u2014 01:22:43", {
+      english: "How\u2019s this relevant here?",
+      french: "En quoi est-ce pertinent ici ?",
+      german: "Was hat das hiermit zu tun?",
+      indonesian: "Apa relevansinya di sini?"
+    }),
+    caption(22, "01:24:20 \u2014 01:26:20", {
+      english: "Prayer for all beings.",
+      french: "Pri\xE8re pour tous les \xEAtres.",
+      german: "Gebet f\xFCr alle Wesen.",
+      indonesian: "Doa untuk semua makhluk."
+    }),
+    caption(23, "01:29:10 \u2014 01:30:34", {
+      english: "[silence continues]",
+      french: "[le silence continue]",
+      german: "[die Stille h\xE4lt an]",
+      indonesian: "[keheningan berlanjut]"
+    }),
+    caption(24, "01:37:47 \u2014 01:38:42", {
+      english: "Year of the ocean...",
+      french: "Ann\xE9e de l\u2019oc\xE9an...",
+      german: "Jahr des Ozeans...",
+      indonesian: "Tahun laut..."
+    }),
+    caption(25, "01:38:43 \u2014 01:40:27", {
+      english: ">> activity",
+      french: ">> activit\xE9",
+      german: ">> Aktivit\xE4t",
+      indonesian: ">> aktivitas"
+    }),
+    caption(26, "01:45:38 \u2014 01:48:27", {
+      english: "You have already seen this.",
+      french: "Tu as d\xE9j\xE0 vu ceci.",
+      german: "Du hast das schon gesehen.",
+      indonesian: "Kamu sudah melihat ini sebelumnya."
+    })
   ];
   var customCaptions = [
     {
@@ -799,13 +626,16 @@
   var currentTimeout = null;
   var isPaused2 = false;
   var pointerTracker = createPointerTracker();
+  function getActiveCaptions() {
+    return videoPlayer.getLoopCount() % 2 === 1 ? captions : captionsLoop2;
+  }
   function playCaption() {
     if (isPaused2) return;
     const time = videoPlayer.getCurrentTime() * 1e3;
     const custom = customCaptions.find((c) => c.condition(pointerTracker.getState()));
     if (custom && currentId !== custom.id) createCaption(custom);
     else if (!currentId) {
-      const currentMatch = captions.find(
+      const currentMatch = getActiveCaptions().find(
         (c) => c.timeStart < time && c.timeStart + c.duration > time
       );
       if (currentMatch) {
@@ -814,12 +644,12 @@
     }
     requestAnimationFrame(playCaption);
   }
-  function createCaption(caption) {
-    const { id, text, duration } = caption;
+  function createCaption(caption2) {
+    const { id, text, duration } = caption2;
     if (currentTimeout) clearTimeout(currentTimeout);
     if (currentElement) currentElement.remove();
     currentId = id;
-    currentCaption = caption;
+    currentCaption = caption2;
     const rectangle = document.createElement("div");
     rectangle.classList.add("caption-container");
     rectangle.textContent = text[getSettings().language];
@@ -846,6 +676,14 @@
     videoPlayer.onPlay(() => {
       isPaused2 = false;
       playCaption();
+    });
+    videoPlayer.onLoop(() => {
+      if (currentTimeout) clearTimeout(currentTimeout);
+      if (currentElement) currentElement.remove();
+      currentId = null;
+      currentCaption = null;
+      currentElement = null;
+      currentTimeout = null;
     });
   }
 
@@ -932,23 +770,13 @@
   }
 
   // settings-picker.ts
-  var picker = document.querySelector("#settings-picker");
-  var pickerTrack = document.querySelector("#picker-track");
-  var pickerTrackInner = document.querySelector(
-    "#picker-track-inner"
-  );
-  var pickerClose = document.querySelector("#picker-close");
+  var picker;
+  var pickerTrack;
+  var pickerTrackInner;
+  var pickerClose;
+  var pickerDrag;
   var activePickerKey = null;
   var pickerReturnFocus = null;
-  var pickerDrag = makeDraggableTrack(pickerTrack, pickerTrackInner, () => {
-    const active = updateActiveItem();
-    if (active && activePickerKey) {
-      setSetting(
-        activePickerKey,
-        active.dataset.value
-      );
-    }
-  });
   function isInsidePicker(path) {
     return path.includes(picker);
   }
@@ -1069,7 +897,20 @@
     });
     return closest;
   }
-  function initSettingsPicker() {
+  function initSettingsPicker(root) {
+    picker = root.querySelector("#settings-picker");
+    pickerTrack = root.querySelector("#picker-track");
+    pickerTrackInner = root.querySelector("#picker-track-inner");
+    pickerClose = root.querySelector("#picker-close");
+    pickerDrag = makeDraggableTrack(pickerTrack, pickerTrackInner, () => {
+      const active = updateActiveItem();
+      if (active && activePickerKey) {
+        setSetting(
+          activePickerKey,
+          active.dataset.value
+        );
+      }
+    });
     pickerClose.addEventListener("click", () => closePicker());
     picker.addEventListener("keydown", (e) => {
       if (e.key === "Escape") {
@@ -1214,11 +1055,11 @@
     }
     return { collapseToRoot };
   }
-  function initSettingsMenus() {
-    const inlineSettings = document.querySelector("#settings-inline");
+  function initSettingsMenus(root) {
+    const inlineSettings = root.querySelector("#settings-inline");
     const inlineMenu = createSettingsMenu(inlineSettings);
-    const burgerButton = document.querySelector("#burger-button");
-    const floatingMenu = document.querySelector("#settings-floating");
+    const burgerButton = root.querySelector("#burger-button");
+    const floatingMenu = root.querySelector("#settings-floating");
     function closeFloatingMenu() {
       floatingMenu.hidden = true;
       burgerButton.setAttribute("aria-expanded", "false");
@@ -1254,8 +1095,22 @@
   }
 
   // script.ts
-  initVideoPlayer();
-  initCaptionsPlayer();
-  initSettingsPicker();
-  initSettingsMenus();
+  var MOUNT_ID = "agus-app";
+  function init() {
+    const anchor = document.getElementById(MOUNT_ID);
+    if (!anchor) {
+      throw new Error(`Missing mount point: <div id="${MOUNT_ID}"></div>`);
+    }
+    anchor.style.display = "none";
+    const root = buildApp();
+    initVideoPlayer(root);
+    initCaptionsPlayer();
+    initSettingsPicker(root);
+    initSettingsMenus(root);
+  }
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
+  } else {
+    init();
+  }
 })();

@@ -1,6 +1,6 @@
 /* ----------Bottom value picker---------- */
 
-.settings-picker {
+.agus-scope .settings-picker {
   position: fixed;
   left: 0;
   right: 0;
@@ -11,7 +11,7 @@
   padding: 8px 0 20px;
 }
 
-.picker-close {
+.agus-scope .picker-close {
   background: none;
   border: none;
   color: white;
@@ -21,17 +21,17 @@
   cursor: pointer;
 }
 
-.picker-close:hover,
-.picker-close:focus-visible {
+.agus-scope .picker-close:hover,
+.agus-scope .picker-close:focus-visible {
   opacity: 1;
 }
 
-.picker-track {
+.agus-scope .picker-track {
   overflow: visible;
   padding: 10px 0;
 }
 
-.picker-track-inner {
+.agus-scope .picker-track-inner {
   display: flex;
   align-items: center;
   gap: 32px;
@@ -39,7 +39,7 @@
   margin: 0 auto;
 }
 
-.picker-item {
+.agus-scope .picker-item {
   flex: 0 0 auto;
   white-space: nowrap;
   font-size: 24px;
@@ -50,7 +50,7 @@
   cursor: pointer;
 }
 
-.picker-item:focus-visible {
+.agus-scope .picker-item:focus-visible {
   outline: 2px solid #f32121;
   outline-offset: 4px;
 }

@@ -1,6 +1,7 @@
-*,
-*::before,
-*::after {
+.agus-scope,
+.agus-scope *,
+.agus-scope *::before,
+.agus-scope *::after {
   font:
     400 20px/1.1 Helvetica,
     sans-serif;

@@ -1,6 +1,14 @@
 /* ----------Burger menu + settings drawer---------- */
 
-.burger-button {
+/* The host site's own CSS sets `nav { pointer-events: none }` globally (it
+   re-enables pointer-events selectively on its own nav's descendants). Our
+   settings menus are <nav> elements too, so without this override they —
+   and everything inside them — would render but never receive clicks. */
+.agus-scope nav {
+  pointer-events: auto;
+}
+
+.agus-scope .burger-button {
   display: none;
   position: fixed;
   top: 16px;
@@ -17,13 +25,13 @@
   cursor: pointer;
 }
 
-body.video-open .burger-button {
+body.video-open .agus-scope .burger-button {
   display: block;
 }
 
 /* ----------Capsule settings menu---------- */
 
-.capsule {
+.agus-scope .capsule {
   border: 1px solid rgba(0, 0, 0, 0.15);
   border-radius: 999px;
   background: rgba(0, 0, 0, 0.05);
@@ -34,48 +42,48 @@ body.video-open .burger-button {
   white-space: nowrap;
 }
 
-.capsule:hover {
+.agus-scope .capsule:hover {
   background: rgba(0, 0, 0, 0.1);
 }
 
-.capsule:focus-visible {
+.agus-scope .capsule:focus-visible {
   outline: 2px solid #f32121;
   outline-offset: 2px;
 }
 
-.capsule-list {
+.agus-scope .capsule-list {
   display: flex;
   gap: 10px;
 }
 
-.capsule-list--vertical {
+.agus-scope .capsule-list--vertical {
   flex-flow: column nowrap;
   gap: 15px;
   align-items: flex-end;
 }
 
-.capsule-list--horizontal {
+.agus-scope .capsule-list--horizontal {
   flex-flow: row nowrap;
   justify-content: flex-end;
   max-width: 100%;
   overflow: visible;
 }
 
-.capsule-row-track {
+.agus-scope .capsule-row-track {
   display: flex;
   gap: 10px;
   width: max-content;
 }
 
-.capsule-row-track .capsule {
+.agus-scope .capsule-row-track .capsule {
   flex: 0 0 auto;
 }
 
-.capsule--close {
+.agus-scope .capsule--close {
   padding: 10px 14px;
 }
 
-.settings-menu-floating {
+.agus-scope .settings-menu-floating {
   position: fixed;
   top: 68px;
   right: 16px;
@@ -86,41 +94,41 @@ body.video-open .burger-button {
   max-width: calc(100vw - 32px);
 }
 
-.settings-menu-floating .capsule {
+.agus-scope .settings-menu-floating .capsule {
   border-color: rgba(255, 255, 255, 0.3);
   background: rgba(255, 255, 255, 0.1);
   color: white;
 }
 
-.settings-menu-floating .capsule:hover {
+.agus-scope .settings-menu-floating .capsule:hover {
   background: rgba(255, 255, 255, 0.2);
 }
 
-.settings-menu-floating .capsule-list--vertical {
+.agus-scope .settings-menu-floating .capsule-list--vertical {
   align-items: flex-end;
   width: 100%;
   min-width: 0;
 }
 
-.settings-menu-floating .capsule-list--horizontal {
+.agus-scope .settings-menu-floating .capsule-list--horizontal {
   justify-content: flex-start;
   align-self: stretch;
   min-width: 0;
 }
 
-.settings-menu-inline {
+.agus-scope .settings-menu-inline {
   display: flex;
   max-width: 100%;
   min-width: 0;
 }
 
-.settings-menu-inline .capsule-list--vertical {
+.agus-scope .settings-menu-inline .capsule-list--vertical {
   align-items: flex-start;
   width: 100%;
   min-width: 0;
 }
 
-.settings-menu-inline .capsule-list--horizontal {
+.agus-scope .settings-menu-inline .capsule-list--horizontal {
   justify-content: flex-start;
   align-self: stretch;
   min-width: 0;

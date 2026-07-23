@@ -1,4 +1,4 @@
-import { customCaptions, captions } from "./captions-data.js";
+import { customCaptions, captions, captionsLoop2 } from "./captions-data.js";
 import type { CustomCaption, Caption } from "./captions-types.js";
 import { getSettings, onSettingsChange } from "./settings.js";
 import { createPointerTracker } from "./pointer-tracker.js";
@@ -12,6 +12,12 @@ let isPaused = false;
 
 const pointerTracker = createPointerTracker();
 
+// Odd loops (1st, 3rd, ...) use `captions`; even loops (2nd, 4th, ...) use
+// `captionsLoop2` — the two sets are written as call-and-response pairs.
+function getActiveCaptions(): Caption[] {
+  return videoPlayer.getLoopCount() % 2 === 1 ? captions : captionsLoop2;
+}
+
 function playCaption() {
   if (isPaused) return;
   const time = videoPlayer.getCurrentTime() * 1000;
@@ -19,7 +25,7 @@ function playCaption() {
   const custom = customCaptions.find((c) => c.condition(pointerTracker.getState()));
   if (custom && currentId !== custom.id) createCaption(custom);
   else if (!currentId) {
-    const currentMatch = captions.find(
+    const currentMatch = getActiveCaptions().find(
       (c) => c.timeStart < time && c.timeStart + c.duration > time,
     );
     if (currentMatch) {
@@ -70,5 +76,14 @@ export function initCaptionsPlayer() {
   videoPlayer.onPlay(() => {
     isPaused = false;
     playCaption();
+  });
+
+  videoPlayer.onLoop(() => {
+    if (currentTimeout) clearTimeout(currentTimeout);
+    if (currentElement) currentElement.remove();
+    currentId = null;
+    currentCaption = null;
+    currentElement = null;
+    currentTimeout = null;
   });
 }

@@ -148,19 +148,17 @@ function createSettingsMenu(
   return { collapseToRoot };
 }
 
-export function initSettingsMenus() {
+export function initSettingsMenus(root: HTMLElement) {
   // ---------- Inline instance (always visible in the page) ----------
 
-  const inlineSettings =
-    document.querySelector<HTMLDivElement>("#settings-inline")!;
+  // Scoped to `root`, not `document` — see video.ts's initVideoPlayer for why.
+  const inlineSettings = root.querySelector<HTMLDivElement>("#settings-inline")!;
   const inlineMenu = createSettingsMenu(inlineSettings);
 
   // ---------- Floating instance (burger, top-right, while video is open) ----------
 
-  const burgerButton =
-    document.querySelector<HTMLButtonElement>("#burger-button")!;
-  const floatingMenu =
-    document.querySelector<HTMLDivElement>("#settings-floating")!;
+  const burgerButton = root.querySelector<HTMLButtonElement>("#burger-button")!;
+  const floatingMenu = root.querySelector<HTMLDivElement>("#settings-floating")!;
 
   function closeFloatingMenu() {
     floatingMenu.hidden = true;

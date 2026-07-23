@@ -1,0 +1,433 @@
+/* --- reset.css --- */
+.agus-scope,
+.agus-scope *,
+.agus-scope *::before,
+.agus-scope *::after {
+  font:
+    400 20px/1.1 Helvetica,
+    sans-serif;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* --- layout.css --- */
+/* Takes over the full viewport regardless of where the app's root element
+   sits in the host page's DOM — see dom.ts for why it's a direct child of
+   <body> rather than nested in whatever mount the host page provides. */
+#agus-root {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  overflow-y: auto;
+}
+
+/* Text section + play section fill one screen when they fit, but never get
+   squeezed to invisible: text-section sizes to its own content, play-section
+   is guaranteed a minimum height regardless (its own children are all
+   position:absolute, so it has no natural height of its own to fall back
+   on). No `overflow: hidden` here — #agus-root's overflow-y:auto is the
+   scroll fallback if the two together ever exceed one viewport. */
+.agus-scope .page-wrapper {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* Pinned to a fixed height rather than sizing to content — auto-sizing here
+   (flex:0 0 auto / height:fit-content) was producing far more height than
+   the actual text needs once the settings capsules render for real, and
+   fighting that with more layout cleverness isn't worth it. Content that
+   somehow needs more than this just overflows visibly rather than being
+   clipped — no `overflow: hidden` here. */
+.agus-scope .text-section {
+  display: flex;
+  flex: 0 0 400px;
+  flex-flow: row;
+  width: 100%;
+  margin-top: 100px;
+  justify-content: center;
+  overflow: visible;
+  padding: 0 20px;
+}
+
+.agus-scope .text-column {
+  display: flex;
+  flex-flow: column nowrap;
+  gap: 24px;
+  width: 400px;
+  max-width: calc(100vw - 40px);
+  min-width: 0;
+}
+
+.agus-scope .blurb {
+  display: flex;
+  flex-flow: column;
+  gap: 10px;
+  min-width: 0;
+}
+.agus-scope .blurb h2 {
+  font-weight: 900;
+  font-size: 24px;
+}
+
+.agus-scope .play-section {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 500px;
+  width: 100%;
+}
+
+.agus-scope .play-section::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: url(https://runway.org.au/media/pages/issues/translation/test/fde48fd680-1784789536/transparency-water.webp);
+  background-repeat: no-repeat;
+  background-size: cover;
+  filter: grayscale(0.7);
+  z-index: -1;
+}
+
+.agus-scope .play-button {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  font-size: 60px;
+  text-transform: uppercase;
+  color: white;
+  text-shadow:
+    0 0 4px red,
+    0 0 4px red,
+    0 0 4px red,
+    0 0 4px red,
+    0 0 4px red;
+  translate: -50% -50%;
+}
+
+/* ----------Smaller text/button on mobile---------- */
+
+@media (max-width: 780px) {
+  .agus-scope .text-section {
+    flex-basis: 350px;
+    margin-top: 20px;
+  }
+
+  .agus-scope .text-column {
+    gap: 12px;
+  }
+
+  .agus-scope .blurb {
+    gap: 4px;
+  }
+
+  .agus-scope .blurb pre {
+    font-size: 14px;
+  }
+
+  .agus-scope .play-section {
+    min-height: 300px;
+  }
+
+  .agus-scope .play-button {
+    font-size: 36px;
+  }
+}
+
+/* --- video.css --- */
+.agus-scope .video-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+.agus-scope .video-container.show {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100vw;
+  height: 100vh;
+  position: fixed;
+  background-color: black;
+  z-index: 10;
+}
+
+.agus-scope .video-wrapper {
+  position: relative;
+  width: fit-content;
+}
+
+.agus-scope #vimeo-player,
+.agus-scope #vimeo-player iframe {
+  display: block;
+  width: 1080px;
+  max-width: 100vw;
+  aspect-ratio: 16 / 9;
+  height: auto;
+  pointer-events: none;
+}
+
+.agus-scope .video-click-target {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  cursor: pointer;
+}
+
+.agus-scope .close-button {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 21;
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.agus-scope .close-button:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* --- captions.css --- */
+.agus-scope {
+  --caption-font-family: Helvetica, sans-serif;
+  --caption-colour: white;
+  --caption-box-colour: black;
+}
+
+.agus-scope .caption-container {
+  font-family: var(--caption-font-family);
+  font-size: var(--caption-font-size);
+  position: absolute;
+  bottom: 50px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: auto;
+  height: auto;
+  padding: 10px 14px;
+  background-color: var(--caption-box-colour);
+  color: var(--caption-colour);
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* Portrait mobile only: the video letterboxes (black bars above/below), so
+   captions sit in that letterbox space below the video frame. In landscape
+   the video fills the screen with little/no letterbox, so this offset would
+   push captions off-screen entirely — keep the base `bottom: 50px` there. */
+@media (max-width: 780px) and (orientation: portrait) {
+  .agus-scope .caption-container {
+    bottom: -60px;
+  }
+}
+
+/* --- settings-menu.css --- */
+/* ----------Burger menu + settings drawer---------- */
+
+/* The host site's own CSS sets `nav { pointer-events: none }` globally (it
+   re-enables pointer-events selectively on its own nav's descendants). Our
+   settings menus are <nav> elements too, so without this override they —
+   and everything inside them — would render but never receive clicks. */
+.agus-scope nav {
+  pointer-events: auto;
+}
+
+.agus-scope .burger-button {
+  display: none;
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 21;
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.5);
+  color: white;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+body.video-open .agus-scope .burger-button {
+  display: block;
+}
+
+/* ----------Capsule settings menu---------- */
+
+.agus-scope .capsule {
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.05);
+  color: inherit;
+  padding: 10px 20px;
+  font-size: 15px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.agus-scope .capsule:hover {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.agus-scope .capsule:focus-visible {
+  outline: 2px solid #f32121;
+  outline-offset: 2px;
+}
+
+.agus-scope .capsule-list {
+  display: flex;
+  gap: 10px;
+}
+
+.agus-scope .capsule-list--vertical {
+  flex-flow: column nowrap;
+  gap: 15px;
+  align-items: flex-end;
+}
+
+.agus-scope .capsule-list--horizontal {
+  flex-flow: row nowrap;
+  justify-content: flex-end;
+  max-width: 100%;
+  overflow: visible;
+}
+
+.agus-scope .capsule-row-track {
+  display: flex;
+  gap: 10px;
+  width: max-content;
+}
+
+.agus-scope .capsule-row-track .capsule {
+  flex: 0 0 auto;
+}
+
+.agus-scope .capsule--close {
+  padding: 10px 14px;
+}
+
+.agus-scope .settings-menu-floating {
+  position: fixed;
+  top: 68px;
+  right: 16px;
+  z-index: 20;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 16px;
+  padding: 16px;
+  max-width: calc(100vw - 32px);
+}
+
+.agus-scope .settings-menu-floating .capsule {
+  border-color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.agus-scope .settings-menu-floating .capsule:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.agus-scope .settings-menu-floating .capsule-list--vertical {
+  align-items: flex-end;
+  width: 100%;
+  min-width: 0;
+}
+
+.agus-scope .settings-menu-floating .capsule-list--horizontal {
+  justify-content: flex-start;
+  align-self: stretch;
+  min-width: 0;
+}
+
+.agus-scope .settings-menu-inline {
+  display: flex;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.agus-scope .settings-menu-inline .capsule-list--vertical {
+  align-items: flex-start;
+  width: 100%;
+  min-width: 0;
+}
+
+.agus-scope .settings-menu-inline .capsule-list--horizontal {
+  justify-content: flex-start;
+  align-self: stretch;
+  min-width: 0;
+}
+
+/* --- settings-picker.css --- */
+/* ----------Bottom value picker---------- */
+
+.agus-scope .settings-picker {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 22;
+  background: rgba(0, 0, 0, 0.85);
+  color: white;
+  padding: 8px 0 20px;
+}
+
+.agus-scope .picker-close {
+  background: none;
+  border: none;
+  color: white;
+  opacity: 0.7;
+  font-size: 16px;
+  padding: 4px 20px 8px;
+  cursor: pointer;
+}
+
+.agus-scope .picker-close:hover,
+.agus-scope .picker-close:focus-visible {
+  opacity: 1;
+}
+
+.agus-scope .picker-track {
+  overflow: visible;
+  padding: 10px 0;
+}
+
+.agus-scope .picker-track-inner {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  width: max-content;
+  margin: 0 auto;
+}
+
+.agus-scope .picker-item {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  font-size: 24px;
+  opacity: 0.5;
+  transition:
+    opacity 0.1s linear,
+    transform 0.1s linear;
+  cursor: pointer;
+}
+
+.agus-scope .picker-item:focus-visible {
+  outline: 2px solid #f32121;
+  outline-offset: 4px;
+}
+
+/* --- host page cleanup --- */
+/* Kirby auto-generates a title/author block before this content renders;
+   hide it rather than fight the CMS template for control over it. */
+.title-wrapper {
+  display: none !important;
+}

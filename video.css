@@ -1,4 +1,4 @@
-.video-container {
+.agus-scope .video-container {
   position: absolute;
   top: 0;
   left: 0;
@@ -7,7 +7,7 @@
   overflow: hidden;
 }
 
-.video-container.show {
+.agus-scope .video-container.show {
   display: flex;
   justify-content: center;
   align-items: center;
@@ -18,13 +18,13 @@
   z-index: 10;
 }
 
-.video-wrapper {
+.agus-scope .video-wrapper {
   position: relative;
   width: fit-content;
 }
 
-#vimeo-player,
-#vimeo-player iframe {
+.agus-scope #vimeo-player,
+.agus-scope #vimeo-player iframe {
   display: block;
   width: 1080px;
   max-width: 100vw;
@@ -33,14 +33,14 @@
   pointer-events: none;
 }
 
-.video-click-target {
+.agus-scope .video-click-target {
   position: absolute;
   inset: 0;
   z-index: 1;
   cursor: pointer;
 }
 
-.close-button {
+.agus-scope .close-button {
   position: absolute;
   top: 16px;
   left: 16px;
@@ -56,6 +56,6 @@
   cursor: pointer;
 }
 
-.close-button:hover {
+.agus-scope .close-button:hover {
   background: rgba(255, 255, 255, 0.2);
 }

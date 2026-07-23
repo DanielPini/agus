@@ -1,10 +1,10 @@
-:root {
+.agus-scope {
   --caption-font-family: Helvetica, sans-serif;
   --caption-colour: white;
   --caption-box-colour: black;
 }
 
-.caption-container {
+.agus-scope .caption-container {
   font-family: var(--caption-font-family);
   font-size: var(--caption-font-size);
   position: absolute;
@@ -20,8 +20,12 @@
   white-space: nowrap;
 }
 
-@media (max-width: 780px) {
-  .caption-container {
+/* Portrait mobile only: the video letterboxes (black bars above/below), so
+   captions sit in that letterbox space below the video frame. In landscape
+   the video fills the screen with little/no letterbox, so this offset would
+   push captions off-screen entirely — keep the base `bottom: 50px` there. */
+@media (max-width: 780px) and (orientation: portrait) {
+  .agus-scope .caption-container {
     bottom: -60px;
   }
 }

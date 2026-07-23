@@ -5,25 +5,17 @@ import { makeDraggableTrack } from "./draggable-track.js";
 // live "centered = selected" behaviour: every drag/wheel move re-evaluates
 // which item is nearest the viewport's center and commits it via setSetting.
 
-const picker = document.querySelector<HTMLDivElement>("#settings-picker")!;
-const pickerTrack = document.querySelector<HTMLDivElement>("#picker-track")!;
-const pickerTrackInner = document.querySelector<HTMLDivElement>(
-  "#picker-track-inner",
-)!;
-const pickerClose = document.querySelector<HTMLButtonElement>("#picker-close")!;
+// Assigned inside initSettingsPicker(), not at module load time — these
+// elements are created at runtime by dom.ts, so they don't exist yet when
+// this module first evaluates.
+let picker: HTMLDivElement;
+let pickerTrack: HTMLDivElement;
+let pickerTrackInner: HTMLDivElement;
+let pickerClose: HTMLButtonElement;
+let pickerDrag: ReturnType<typeof makeDraggableTrack>;
 
 let activePickerKey: keyof Settings | null = null;
 let pickerReturnFocus: (() => void) | null = null;
-
-const pickerDrag = makeDraggableTrack(pickerTrack, pickerTrackInner, () => {
-  const active = updateActiveItem();
-  if (active && activePickerKey) {
-    setSetting(
-      activePickerKey,
-      active.dataset.value as Settings[typeof activePickerKey],
-    );
-  }
-});
 
 export function isInsidePicker(path: EventTarget[]): boolean {
   return path.includes(picker);
@@ -163,7 +155,23 @@ function updateActiveItem(): HTMLElement | null {
   return closest;
 }
 
-export function initSettingsPicker() {
+export function initSettingsPicker(root: HTMLElement) {
+  // Scoped to `root`, not `document` — see video.ts's initVideoPlayer for why.
+  picker = root.querySelector<HTMLDivElement>("#settings-picker")!;
+  pickerTrack = root.querySelector<HTMLDivElement>("#picker-track")!;
+  pickerTrackInner = root.querySelector<HTMLDivElement>("#picker-track-inner")!;
+  pickerClose = root.querySelector<HTMLButtonElement>("#picker-close")!;
+
+  pickerDrag = makeDraggableTrack(pickerTrack, pickerTrackInner, () => {
+    const active = updateActiveItem();
+    if (active && activePickerKey) {
+      setSetting(
+        activePickerKey,
+        active.dataset.value as Settings[typeof activePickerKey],
+      );
+    }
+  });
+
   pickerClose.addEventListener("click", () => closePicker());
   picker.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
