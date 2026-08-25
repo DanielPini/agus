@@ -5,7 +5,6 @@
   width: 0;
   height: 0;
   overflow: hidden;
-  pointer-events: auto;
 }
 
 .agus-scope .video-container.show {
@@ -46,15 +45,20 @@
   top: 16px;
   left: 16px;
   z-index: 21;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 44px;
   height: 44px;
   border: none;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.1);
   color: white;
-  font-size: 28px;
-  line-height: 1;
   cursor: pointer;
+}
+
+.agus-scope .close-button svg {
+  display: block;
 }
 
 .agus-scope .close-button:hover {

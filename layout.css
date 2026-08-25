@@ -6,15 +6,12 @@
   inset: 0;
   z-index: 1;
   overflow-y: auto;
-  /* Nothing in .page-wrapper's own empty space (padding, the flanking
-     space either side of the centered text column, the mostly-empty
-     play-section) has a click handler of its own — only specific leaf
-     elements do (play-button, the nav menus, etc.), and each of those
-     re-enables pointer-events itself. Left at the default (auto), this
-     full-viewport box would swallow clicks meant for host-page elements
-     that happen to render underneath it, e.g. the host's own "click
-     outside to close" handling for its work-info drawer. */
-  pointer-events: none;
+  /* Click-passthrough to host-page elements underneath (e.g. the host's
+     "click outside to close" handling for its work-info drawer) is handled
+     in JS (see setupHostClickPassthrough in dom.ts), not via pointer-events
+     here — pointer-events:none would also exclude #agus-root from wheel/
+     touch hit-testing, breaking the scrolling this overflow-y:auto exists
+     for in the first place. */
   background: #f1fae4;
   background-image: url("https://runway.org.au/media/pages/issues/translation/test/181f2bb12c-1787655892/bg.webp");
   background-repeat: no-repeat;
@@ -44,7 +41,7 @@
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  padding: 80px 45px 120px;
+  padding: 40px 45px 120px;
 }
 
 /* Sized to its own content — a fixed height here doesn't push .play-section
@@ -104,7 +101,7 @@
 .agus-scope .play-section {
   position: relative;
   flex: 1 1 auto;
-  min-height: 500px;
+  min-height: 400px;
   width: 100%;
 }
 
@@ -130,7 +127,6 @@
   left: 50%;
   bottom: 36px;
   translate: -50% 0;
-  pointer-events: auto;
   padding: 10px 14px;
   background-color: var(--caption-box-colour);
   white-space: nowrap;
