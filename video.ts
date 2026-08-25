@@ -1,3 +1,8 @@
+import { getSettings, onSettingsChange } from "./settings.js";
+
+// TODO: replace with the real media-bucket URL for the audio description track.
+const AUDIO_DESCRIPTION_SRC = "";
+
 declare const Vimeo: {
   Player: new (
     el: string | HTMLElement,
@@ -21,6 +26,7 @@ export let videoWrapper: HTMLDivElement;
 let videoContainer: HTMLDivElement;
 let playButton: HTMLElement;
 let closeButton: HTMLButtonElement;
+let audioDescriptionEl: HTMLAudioElement;
 // Clicks inside the Vimeo iframe never bubble to the parent document (separate
 // browsing context), so a transparent overlay catches the click instead.
 let videoClickTarget: HTMLDivElement;
@@ -65,6 +71,8 @@ const loopListeners: Array<() => void> = [];
 function restartLoop(nextLoopCount: number) {
   loopCount = nextLoopCount;
   if (player) player.setCurrentTime(0).then(() => player!.play());
+  audioDescriptionEl.currentTime = 0;
+  audioDescriptionEl.play().catch(() => {});
   loopListeners.forEach((fn) => fn());
 }
 
@@ -85,7 +93,10 @@ export function onVideoClose(fn: () => void) {
 export function setVideoOpen(open: boolean) {
   videoContainer.classList.toggle("show", open);
   document.body.classList.toggle("video-open", open);
-  if (!open) closeListeners.forEach((fn) => fn());
+  if (!open) {
+    audioDescriptionEl.pause();
+    closeListeners.forEach((fn) => fn());
+  }
 }
 
 export async function initVideoPlayer(root: HTMLElement) {
@@ -97,6 +108,12 @@ export async function initVideoPlayer(root: HTMLElement) {
   playButton = root.querySelector<HTMLElement>(".play-button")!;
   closeButton = root.querySelector<HTMLButtonElement>(".close-button")!;
   videoClickTarget = root.querySelector<HTMLDivElement>(".video-click-target")!;
+  audioDescriptionEl = root.querySelector<HTMLAudioElement>("#audio-description")!;
+  audioDescriptionEl.src = AUDIO_DESCRIPTION_SRC;
+  audioDescriptionEl.muted = getSettings().audioDescription === "off";
+  onSettingsChange((s) => {
+    audioDescriptionEl.muted = s.audioDescription === "off";
+  });
 
   // Wired up immediately, not gated behind the Vimeo SDK load, so the UI
   // stays responsive (close/backdrop/play-pause) even if that load is slow
@@ -147,9 +164,11 @@ export async function initVideoPlayer(root: HTMLElement) {
 
   player.on("pause", () => {
     isPaused = true;
+    audioDescriptionEl.pause();
   });
   player.on("play", () => {
     isPaused = false;
+    audioDescriptionEl.play().catch(() => {});
   });
   player.on("ended", () => {
     restartLoop(loopCount + 1);

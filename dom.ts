@@ -18,7 +18,7 @@ export function buildApp(): HTMLElement {
             <article class="blurb">
               <h2>Subtitles</h2>
               <h3>Agus Wijaya</h3>
-              <pre style="font-family: Helvetica, sans-serif">
+              <pre>
 A video plays on loop.
 A system of subtitles
 describes, anticipates
@@ -44,6 +44,7 @@ is speaking.
           <div id="vimeo-player"></div>
           <div class="video-click-target"></div>
         </div>
+        <audio id="audio-description" preload="none"></audio>
       </div>
       <button
         class="burger-button"

@@ -6,6 +6,23 @@
   inset: 0;
   z-index: 1;
   overflow-y: auto;
+  background: #f1fae4;
+  background-image: url("https://runway.org.au/media/pages/issues/translation/test/c7250e0ffa-1787655238/bg.png");
+  background-repeat: no-repeat;
+  /* attachment:fixed pins the positioning area to the viewport itself —
+     without it, `background-size` is computed against #agus-root's own
+     padding box, which (because it's the thing that overflow-y:auto
+     scrolls) is as tall as the full page content, not just what's
+     visible, so the image was scaling to cover far more than one screen. */
+  background-attachment: fixed;
+  background-size: cover;
+  color: #36454f;
+}
+
+@media (min-width: 781px) {
+  #agus-root {
+    background-size: 100% 100vh;
+  }
 }
 
 /* Text section + play section fill one screen when they fit, but never get
@@ -18,6 +35,7 @@
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  padding: 80px 45px 120px;
 }
 
 /* Sized to its own content — a fixed height here doesn't push .play-section
@@ -40,7 +58,7 @@
   display: flex;
   flex-flow: column nowrap;
   gap: 24px;
-  width: 400px;
+  width: 225px;
   max-width: calc(100vw - 40px);
   min-width: 0;
 }
@@ -52,8 +70,26 @@
   min-width: 0;
 }
 .agus-scope .blurb h2 {
-  font-weight: 900;
-  font-size: 24px;
+  margin: 0;
+  color: #36454f;
+  font-family: "Syne", Arial, sans-serif;
+  font-size: 19px;
+  font-weight: 800;
+}
+.agus-scope .blurb h3 {
+  margin: 2px 0 24px;
+  font-family: "Fraunces", Georgia, serif;
+  font-size: 13px;
+  font-style: italic;
+  font-weight: 300;
+}
+.agus-scope .blurb pre {
+  margin: 0;
+  font-family: "Fraunces", Georgia, serif;
+  font-size: 20px;
+  font-style: normal;
+  font-weight: 300;
+  line-height: 27px;
 }
 
 .agus-scope .play-section {
@@ -74,39 +110,56 @@
   z-index: -1;
 }
 
+/* font-family and color track the Font > Family/Colour caption settings
+   (--caption-font-family/--caption-colour, set in settings.ts) rather than
+   fixed values, so the button previews whichever font and colour the
+   viewer has picked for the subtitles. */
 .agus-scope .play-button {
   position: absolute;
-  top: 50%;
   left: 50%;
-  font-size: 60px;
+  bottom: 36px;
+  translate: -50% 0;
+  font-size: 40px;
   text-transform: uppercase;
-  color: white;
-  text-shadow:
-    0 0 4px red,
-    0 0 4px red,
-    0 0 4px red,
-    0 0 4px red,
-    0 0 4px red;
-  translate: -50% -50%;
+  font-family: var(--caption-font-family);
+  font-weight: 400;
+  color: var(--caption-colour);
+  -webkit-text-stroke: 3px #111;
+  paint-order: stroke fill;
 }
 
 /* ----------Smaller text/button on mobile---------- */
 
 @media (max-width: 780px) {
+  .agus-scope .page-wrapper {
+    padding: 34px 34px 110px;
+  }
+
   .agus-scope .text-section {
     margin-top: 20px;
   }
 
   .agus-scope .text-column {
     gap: 12px;
+    width: 220px;
   }
 
   .agus-scope .blurb {
     gap: 4px;
   }
 
+  .agus-scope .blurb h2 {
+    font-size: 18px;
+  }
+
+  .agus-scope .blurb h3 {
+    margin-bottom: 25px;
+    font-size: 13px;
+  }
+
   .agus-scope .blurb pre {
-    font-size: 14px;
+    font-size: 16.5px;
+    line-height: 22px;
   }
 
   .agus-scope .play-section {
@@ -114,6 +167,7 @@
   }
 
   .agus-scope .play-button {
-    font-size: 36px;
+    bottom: 105px;
+    font-size: 38px;
   }
 }

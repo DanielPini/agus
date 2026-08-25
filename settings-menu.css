@@ -32,12 +32,16 @@ body.video-open .agus-scope .burger-button {
 /* ----------Capsule settings menu---------- */
 
 .agus-scope .capsule {
-  border: 1px solid rgba(0, 0, 0, 0.15);
+  margin-bottom: 17px;
+  border: 1px solid #36454f;
   border-radius: 999px;
   background: rgba(0, 0, 0, 0.05);
-  color: inherit;
-  padding: 10px 20px;
-  font-size: 15px;
+  color: #36454f;
+  padding: 8px 23px;
+  font-family: "Fraunces", Georgia, serif;
+  font-size: 20px;
+  font-style: normal;
+  font-weight: 300;
   cursor: pointer;
   white-space: nowrap;
 }
@@ -132,4 +136,10 @@ body.video-open .agus-scope .burger-button {
   justify-content: flex-start;
   align-self: stretch;
   min-width: 0;
+}
+
+@media (max-width: 780px) {
+  .agus-scope .capsule {
+    font-size: 16.5px;
+  }
 }
