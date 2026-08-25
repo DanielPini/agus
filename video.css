@@ -5,6 +5,7 @@
   width: 0;
   height: 0;
   overflow: hidden;
+  pointer-events: auto;
 }
 
 .agus-scope .video-container.show {

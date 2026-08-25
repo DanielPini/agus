@@ -6,6 +6,15 @@
   inset: 0;
   z-index: 1;
   overflow-y: auto;
+  /* Nothing in .page-wrapper's own empty space (padding, the flanking
+     space either side of the centered text column, the mostly-empty
+     play-section) has a click handler of its own — only specific leaf
+     elements do (play-button, the nav menus, etc.), and each of those
+     re-enables pointer-events itself. Left at the default (auto), this
+     full-viewport box would swallow clicks meant for host-page elements
+     that happen to render underneath it, e.g. the host's own "click
+     outside to close" handling for its work-info drawer. */
+  pointer-events: none;
   background: #f1fae4;
   background-image: url("https://runway.org.au/media/pages/issues/translation/test/181f2bb12c-1787655892/bg.webp");
   background-repeat: no-repeat;
@@ -121,6 +130,7 @@
   left: 50%;
   bottom: 36px;
   translate: -50% 0;
+  pointer-events: auto;
   padding: 10px 14px;
   background-color: var(--caption-box-colour);
   white-space: nowrap;

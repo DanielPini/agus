@@ -30,6 +30,15 @@
   inset: 0;
   z-index: 1;
   overflow-y: auto;
+  /* Nothing in .page-wrapper's own empty space (padding, the flanking
+     space either side of the centered text column, the mostly-empty
+     play-section) has a click handler of its own — only specific leaf
+     elements do (play-button, the nav menus, etc.), and each of those
+     re-enables pointer-events itself. Left at the default (auto), this
+     full-viewport box would swallow clicks meant for host-page elements
+     that happen to render underneath it, e.g. the host's own "click
+     outside to close" handling for its work-info drawer. */
+  pointer-events: none;
   background: #f1fae4;
   background-image: url("https://runway.org.au/media/pages/issues/translation/test/181f2bb12c-1787655892/bg.webp");
   background-repeat: no-repeat;
@@ -145,6 +154,7 @@
   left: 50%;
   bottom: 36px;
   translate: -50% 0;
+  pointer-events: auto;
   padding: 10px 14px;
   background-color: var(--caption-box-colour);
   white-space: nowrap;
@@ -209,6 +219,7 @@
   width: 0;
   height: 0;
   overflow: hidden;
+  pointer-events: auto;
 }
 
 .agus-scope .video-container.show {
@@ -314,6 +325,7 @@
   top: 16px;
   right: 16px;
   z-index: 21;
+  pointer-events: auto;
   width: 44px;
   height: 44px;
   border: none;
@@ -453,6 +465,7 @@ body.video-open .agus-scope .burger-button {
   right: 0;
   bottom: 0;
   z-index: 22;
+  pointer-events: auto;
   background: rgba(0, 0, 0, 0.85);
   color: white;
   padding: 8px 0 20px;
@@ -509,4 +522,21 @@ body.video-open .agus-scope .burger-button {
    hide it rather than fight the CMS template for control over it. */
 .title-wrapper {
   display: none !important;
+}
+
+.notice-container {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  z-index: 99;
+}
+
+/* stroke="white" on #work-menu's close icon is an SVG presentation
+   attribute, not an inline style — it has the lowest priority in the
+   cascade (weaker than any selector-based rule), so a plain CSS rule
+   overrides it. Scoped to #work-menu specifically: the same .close-button
+   class is reused elsewhere on the site (per dom.ts's own comment on this),
+   where white may be the correct colour for whatever it sits on there. */
+#work-menu .close-button path {
+  stroke: rgb(135, 135, 135);
 }

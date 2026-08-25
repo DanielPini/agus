@@ -14,6 +14,7 @@
   top: 16px;
   right: 16px;
   z-index: 21;
+  pointer-events: auto;
   width: 44px;
   height: 44px;
   border: none;
