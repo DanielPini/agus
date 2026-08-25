@@ -16,23 +16,38 @@ export function makeDraggableTrack(
   let startOffset = 0;
   const DRAG_THRESHOLD = 5;
 
-  viewport.style.touchAction = "pan-y";
+  // "none", not "pan-y" — pan-y explicitly tells the browser it's free to
+  // start a native vertical scroll on this element without waiting for our
+  // own pointer handling, so any touch-drag with even a slight vertical
+  // component fires both at once: our horizontal drag and a page scroll.
+  // "none" hands the whole gesture (and pinch-zoom) to our pointer events
+  // instead, so nothing else can fire while the user is dragging here.
+  viewport.style.touchAction = "none";
   viewport.style.cursor = "grab";
 
+  // The allowed range is exactly "however far centers the first item" to
+  // "however far centers the last item" — not an approximation via slack
+  // plus a padding allowance (that double-counted: the old slack-based
+  // range was already sized differently for a track wider vs. narrower
+  // than its viewport, so adding a flat allowance on top overshot badly
+  // for a narrow track like a 2-item "off"/"on" row, dragging it right off
+  // the screen, while undershooting for others). Computing the exact
+  // centering offset for both edges directly — the same math centerOn()
+  // already uses — is correct for any track width with no separate cases,
+  // and it's never looser than it needs to be.
   function clampOffset(px: number): number {
-    // When the track is wider than the viewport, this only allows negative
-    // offsets (drag left to reveal more, min < 0, max 0) — the classic
-    // "flush-left, scroll to see the rest" case. When the track is
-    // *narrower* than the viewport (e.g. a short options list like
-    // language), `viewport.clientWidth - track.offsetWidth` is positive, so
-    // both bounds used to collapse to exactly 0 — locking the track in
-    // place and making centerOn() a no-op regardless of which item it was
-    // asked to center. Allowing a symmetric positive range here lets a
-    // narrow track still be shifted right to bring any specific item to
-    // the viewport's center.
-    const slack = viewport.clientWidth - track.offsetWidth;
-    const min = Math.min(0, slack);
-    const max = Math.max(0, slack);
+    const firstItem = track.firstElementChild as HTMLElement | null;
+    const lastItem = track.lastElementChild as HTMLElement | null;
+    if (!firstItem || !lastItem) return px;
+
+    const viewportRect = viewport.getBoundingClientRect();
+    const viewportCenter = viewportRect.left + viewportRect.width / 2;
+    const firstRect = firstItem.getBoundingClientRect();
+    const lastRect = lastItem.getBoundingClientRect();
+
+    const max = offset + (viewportCenter - (firstRect.left + firstRect.width / 2));
+    const min = offset + (viewportCenter - (lastRect.left + lastRect.width / 2));
+
     return Math.max(min, Math.min(max, px));
   }
 
