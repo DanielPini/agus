@@ -36,10 +36,10 @@ export function makeDraggableTrack(
     return Math.max(min, Math.min(max, px));
   }
 
-  function setOffset(px: number) {
+  function setOffset(px: number, silent = false) {
     offset = clampOffset(px);
     track.style.transform = `translateX(${offset}px)`;
-    onChange?.();
+    if (!silent) onChange?.();
   }
 
   function resetOffset() {
@@ -47,12 +47,19 @@ export function makeDraggableTrack(
     track.style.transform = "";
   }
 
+  // Silent: the caller already knows which item was chosen (click, keyboard,
+  // or the initial open) — re-running onChange's "closest item to center"
+  // geometry check here would fight that known value. clampOffset can stop
+  // an edge item (e.g. the first one) from ever reaching true center, so the
+  // geometry check would then land on its neighbour instead and overwrite
+  // the correct selection. onChange stays wired to setOffset's own drag/wheel
+  // calls, where geometry genuinely is the only source of truth.
   function centerOn(item: HTMLElement) {
     const viewportRect = viewport.getBoundingClientRect();
     const itemRect = item.getBoundingClientRect();
     const viewportCenter = viewportRect.left + viewportRect.width / 2;
     const itemCenter = itemRect.left + itemRect.width / 2;
-    setOffset(offset + (viewportCenter - itemCenter));
+    setOffset(offset + (viewportCenter - itemCenter), true);
   }
 
   // Pointer capture is deferred until real movement is detected. Capturing

@@ -36,6 +36,13 @@ export const languageLabels: Record<Language, string> = {
   indonesian: "Bahasa Indonesia",
 };
 
+export const playButtonLabels: Record<Language, string> = {
+  english: "Play",
+  french: "Lire",
+  german: "Abspielen",
+  indonesian: "Putar",
+};
+
 const languageCodes: Record<Language, string> = {
   english: "en",
   french: "fr",

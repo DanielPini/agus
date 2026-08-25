@@ -31,7 +31,7 @@
   z-index: 1;
   overflow-y: auto;
   background: #f1fae4;
-  background-image: url("https://runway.org.au/media/pages/issues/translation/test/c7250e0ffa-1787655238/bg.png");
+  background-image: url("https://runway.org.au/media/pages/issues/translation/test/181f2bb12c-1787655892/bg.webp");
   background-repeat: no-repeat;
   /* attachment:fixed pins the positioning area to the viewport itself —
      without it, `background-size` is computed against #agus-root's own
@@ -134,15 +134,20 @@
   z-index: -1;
 }
 
-/* font-family and color track the Font > Family/Colour caption settings
-   (--caption-font-family/--caption-colour, set in settings.ts) rather than
-   fixed values, so the button previews whichever font and colour the
-   viewer has picked for the subtitles. */
+/* Boxed the same way captions are (.caption-container in captions.css) and
+   bound to the same --caption-* custom properties, so the button previews
+   the Font > Family/Colour/Textbox settings — and the text itself is set
+   from playButtonLabels[language] in video.ts, so it tracks the Language
+   setting too. All of these are driven through settings.ts's applySettings,
+   which Reset also goes through, so Reset needs no separate handling here. */
 .agus-scope .play-button {
   position: absolute;
   left: 50%;
   bottom: 36px;
   translate: -50% 0;
+  padding: 10px 14px;
+  background-color: var(--caption-box-colour);
+  white-space: nowrap;
   font-size: 40px;
   text-transform: uppercase;
   font-family: var(--caption-font-family);

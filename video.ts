@@ -1,4 +1,4 @@
-import { getSettings, onSettingsChange } from "./settings.js";
+import { getSettings, onSettingsChange, playButtonLabels } from "./settings.js";
 
 // TODO: replace with the real media-bucket URL for the audio description track.
 const AUDIO_DESCRIPTION_SRC = "";
@@ -111,8 +111,11 @@ export async function initVideoPlayer(root: HTMLElement) {
   audioDescriptionEl = root.querySelector<HTMLAudioElement>("#audio-description")!;
   audioDescriptionEl.src = AUDIO_DESCRIPTION_SRC;
   audioDescriptionEl.muted = getSettings().audioDescription === "off";
+
+  playButton.textContent = playButtonLabels[getSettings().language];
   onSettingsChange((s) => {
     audioDescriptionEl.muted = s.audioDescription === "off";
+    playButton.textContent = playButtonLabels[s.language];
   });
 
   // Wired up immediately, not gated behind the Vimeo SDK load, so the UI

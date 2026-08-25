@@ -73,6 +73,7 @@ function focusSibling(item: HTMLElement, dir: 1 | -1) {
         next.dataset.value as Settings[typeof activePickerKey],
       );
     }
+    updateActiveItem();
   }
 }
 
@@ -133,14 +134,18 @@ export function openPicker(key: keyof Settings, onClose: () => void) {
   });
 }
 
-function updateActiveItem(): HTMLElement | null {
+// Geometry-only: which item is nearest the viewport's center right now.
+// Used solely to infer a new value while the user is physically dragging or
+// wheel-scrolling the track — during a drag there's no other signal for
+// what they're choosing. Never use this to decide what's "active" for
+// display; see updateActiveItem for why.
+function findClosestToCenter(): HTMLElement | null {
   const viewportRect = pickerTrack.getBoundingClientRect();
   const centerX = viewportRect.left + viewportRect.width / 2;
   let closest: HTMLElement | null = null;
   let closestDist = Infinity;
 
-  const items = pickerTrackInner.querySelectorAll<HTMLElement>(".picker-item");
-  items.forEach((item) => {
+  pickerTrackInner.querySelectorAll<HTMLElement>(".picker-item").forEach((item) => {
     const rect = item.getBoundingClientRect();
     const itemCenter = rect.left + rect.width / 2;
     const dist = Math.abs(itemCenter - centerX);
@@ -150,15 +155,30 @@ function updateActiveItem(): HTMLElement | null {
     }
   });
 
-  items.forEach((item) => {
-    const active = item === closest;
+  return closest;
+}
+
+// Marks whichever item matches the current setting value as active (bold,
+// full opacity, scaled up) — driven by the setting itself, not by track
+// geometry. clampOffset can stop an edge item (e.g. the first one) from
+// ever reaching true center, and how close it gets depends on layout that
+// varies by context (viewport width, whether web fonts have finished
+// loading yet), so a "closest item to center" reading is never reliable
+// enough to double as the active-item indicator.
+function updateActiveItem(): HTMLElement | null {
+  const currentValue = activePickerKey ? String(getSettings()[activePickerKey]) : null;
+  let active: HTMLElement | null = null;
+
+  pickerTrackInner.querySelectorAll<HTMLElement>(".picker-item").forEach((item) => {
+    const isActive = item.dataset.value === currentValue;
+    if (isActive) active = item;
     item.style.zIndex = "1000";
-    item.style.opacity = active ? "1" : "0.5";
-    item.style.fontWeight = active ? "700" : "400";
-    item.style.transform = active ? "scale(1.15)" : "scale(1)";
+    item.style.opacity = isActive ? "1" : "0.5";
+    item.style.fontWeight = isActive ? "700" : "400";
+    item.style.transform = isActive ? "scale(1.15)" : "scale(1)";
   });
 
-  return closest;
+  return active;
 }
 
 export function initSettingsPicker(root: HTMLElement) {
@@ -169,13 +189,14 @@ export function initSettingsPicker(root: HTMLElement) {
   pickerClose = root.querySelector<HTMLButtonElement>("#picker-close")!;
 
   pickerDrag = makeDraggableTrack(pickerTrack, pickerTrackInner, () => {
-    const active = updateActiveItem();
-    if (active && activePickerKey) {
+    const closest = findClosestToCenter();
+    if (closest && activePickerKey) {
       setSetting(
         activePickerKey,
-        active.dataset.value as Settings[typeof activePickerKey],
+        closest.dataset.value as Settings[typeof activePickerKey],
       );
     }
+    updateActiveItem();
   });
 
   pickerClose.addEventListener("click", () => closePicker());
