@@ -1,7 +1,18 @@
 import { getSettings, onSettingsChange, playButtonLabels } from "./settings.js";
 
-// TODO: replace with the real media-bucket URL for the audio description track.
-const AUDIO_DESCRIPTION_SRC = "";
+// Dormant: the synced-in-video audio description. Two tracks, chosen by loop
+// parity to match the captions / captionsLoop2 split. Both left "" until
+// correctly-timed files exist — while empty, nothing loads or plays here and
+// the standalone player in audio-description.ts is the only audio
+// description. TODO: paste the two media URLs to re-enable synced playback.
+const AUDIO_DESCRIPTION_SRC_LOOP_ODD = "";
+const AUDIO_DESCRIPTION_SRC_LOOP_EVEN = "";
+
+function audioDescriptionSrcFor(loop: number): string {
+  return loop % 2 === 1
+    ? AUDIO_DESCRIPTION_SRC_LOOP_ODD
+    : AUDIO_DESCRIPTION_SRC_LOOP_EVEN;
+}
 
 declare const Vimeo: {
   Player: new (
@@ -71,8 +82,16 @@ const loopListeners: Array<() => void> = [];
 function restartLoop(nextLoopCount: number) {
   loopCount = nextLoopCount;
   if (player) player.setCurrentTime(0).then(() => player!.play());
-  audioDescriptionEl.currentTime = 0;
-  audioDescriptionEl.play().catch(() => {});
+  // Guarded so an unconfigured (empty) <audio> is never told to seek or
+  // play — the synced track is dormant until the loop URLs are filled in.
+  const nextAudioSrc = audioDescriptionSrcFor(loopCount);
+  if (nextAudioSrc) {
+    if (audioDescriptionEl.getAttribute("src") !== nextAudioSrc) {
+      audioDescriptionEl.src = nextAudioSrc;
+    }
+    audioDescriptionEl.currentTime = 0;
+    audioDescriptionEl.play().catch(() => {});
+  }
   loopListeners.forEach((fn) => fn());
 }
 
@@ -109,7 +128,8 @@ export async function initVideoPlayer(root: HTMLElement) {
   closeButton = root.querySelector<HTMLButtonElement>(".close-button")!;
   videoClickTarget = root.querySelector<HTMLDivElement>(".video-click-target")!;
   audioDescriptionEl = root.querySelector<HTMLAudioElement>("#audio-description")!;
-  audioDescriptionEl.src = AUDIO_DESCRIPTION_SRC;
+  const initialAudioDescriptionSrc = audioDescriptionSrcFor(loopCount);
+  if (initialAudioDescriptionSrc) audioDescriptionEl.src = initialAudioDescriptionSrc;
   audioDescriptionEl.muted = getSettings().audioDescription === "off";
 
   playButton.textContent = playButtonLabels[getSettings().language];
@@ -171,7 +191,7 @@ export async function initVideoPlayer(root: HTMLElement) {
   });
   player.on("play", () => {
     isPaused = false;
-    audioDescriptionEl.play().catch(() => {});
+    if (audioDescriptionEl.src) audioDescriptionEl.play().catch(() => {});
   });
   player.on("ended", () => {
     restartLoop(loopCount + 1);

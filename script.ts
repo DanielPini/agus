@@ -1,6 +1,7 @@
 import { buildApp } from "./dom.js";
 import { initVideoPlayer } from "./video.js";
 import { initCaptionsPlayer } from "./captions-player.js";
+import { initAudioDescription } from "./audio-description.js";
 import { initSettingsPicker } from "./settings-picker.js";
 import { initSettingsMenus } from "./settings-menu.js";
 
@@ -20,6 +21,7 @@ function init() {
   const root = buildApp();
   initVideoPlayer(root);
   initCaptionsPlayer();
+  initAudioDescription(root);
   initSettingsPicker(root);
   initSettingsMenus(root);
 }

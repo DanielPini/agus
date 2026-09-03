@@ -37,6 +37,21 @@ is speaking.
         <div class="play-section">
           <h2 class="play-button">Play</h2>
         </div>
+        <section class="audio-description-section" aria-label="Audio description">
+          <p class="audio-description-note">
+            This video has an audio description. It runs on its own here and is
+            not synced to the video.
+          </p>
+          <button
+            class="audio-description-toggle"
+            id="audio-description-toggle"
+            type="button"
+            aria-pressed="false"
+          >
+            Play audio description
+          </button>
+          <audio id="audio-description-standalone" preload="none"></audio>
+        </section>
       </div>
       <div class="video-container">
         <button class="close-button" aria-label="Close video">

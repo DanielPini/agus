@@ -86,9 +86,9 @@ export const captions: Caption[] = [
   }),
   caption(11, "00:31:00 — 00:31:15", {
     english: "ths sctn hs bn rdc",
-    french: "ctt sctn a été rdgée",
+    french: "ctt sctn a été cvrdée",
     german: "dsr abschntt wrd geschwrzt",
-    indonesian: "bgn ini tlh disnsor",
+    indonesian: "sbgn sdh diptg",
   }),
   caption(12, "00:34:15 — 00:36:53", {
     english: "what were we?",
@@ -233,9 +233,9 @@ export const captionsLoop2: Caption[] = [
   }),
   caption(10, "00:31:00 — 00:31:15", {
     english: "ths sctn hs bn rdc",
-    french: "ctt sctn a été rdgée",
+    french: "ctt sctn a été cvrdée",
     german: "dsr abschntt wrd geschwrzt",
-    indonesian: "bgn ini tlh disnsor",
+    indonesian: "sbgn sdh diptg",
   }),
   caption(13, "00:34:15 — 00:36:53", {
     english: "what were we?",
@@ -338,10 +338,10 @@ export const customCaptions: CustomCaption[] = [
   {
     id: 6,
     text: {
-      english: "Wait, don't leave",
-      french: "Attends, ne pars pas",
-      german: "Warte, geh nicht",
-      indonesian: "Tunggu, jangan pergi",
+      english: "[attention shifts elsewhere]",
+      french: "[l’attention se déplace ailleurs]",
+      german: "[die Aufmerksamkeit verlagert sich anderswohin]",
+      indonesian: "[perhatian beralih ke tempat lain]",
     },
     condition: (state: State) =>
       state.position.y < 100 && state.directionY === "up",

@@ -32,7 +32,6 @@ body.video-open .agus-scope .burger-button {
 /* ----------Capsule settings menu---------- */
 
 .agus-scope .capsule {
-  margin-bottom: 17px;
   border: 1px solid #36454f;
   border-radius: 999px;
   background: rgba(0, 0, 0, 0.05);
@@ -62,7 +61,7 @@ body.video-open .agus-scope .burger-button {
 
 .agus-scope .capsule-list--vertical {
   flex-flow: column nowrap;
-  gap: 15px;
+  gap: 12px;
   align-items: flex-end;
 }
 

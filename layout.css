@@ -13,7 +13,7 @@
      touch hit-testing, breaking the scrolling this overflow-y:auto exists
      for in the first place. */
   background: #f1fae4;
-  background-image: url("https://runway.org.au/media/pages/issues/translation/test/181f2bb12c-1787655892/bg.webp");
+  background-image: url("https://runway.org.au/media/pages/issues/translation/test/b26ae444c8-1788418665/bg-c.webp");
   background-repeat: no-repeat;
   /* attachment:fixed pins the positioning area to the viewport itself —
      without it, `background-size` is computed against #agus-root's own
@@ -105,17 +105,6 @@
   width: 100%;
 }
 
-.agus-scope .play-section::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background-image: url(https://runway.org.au/media/pages/issues/translation/test/fde48fd680-1784789536/transparency-water.webp);
-  background-repeat: no-repeat;
-  background-size: cover;
-  filter: grayscale(0.7);
-  z-index: -1;
-}
-
 /* Boxed the same way captions are (.caption-container in captions.css) and
    bound to the same --caption-* custom properties, so the button previews
    the Font > Family/Colour/Textbox settings — and the text itself is set
@@ -130,13 +119,72 @@
   padding: 10px 14px;
   background-color: var(--caption-box-colour);
   white-space: nowrap;
-  font-size: 40px;
+  font-size: 32px;
   text-transform: uppercase;
   font-family: var(--caption-font-family);
   font-weight: 400;
   color: var(--caption-colour);
   -webkit-text-stroke: 3px #111;
   paint-order: stroke fill;
+}
+
+/* Standalone audio-description player, sitting under the Play button. Kept
+   separate from the video on purpose — see audio-description.ts: the current
+   audio file is the wrong length to sync, so it plays on its own here. The
+   near-opaque panel guarantees the text clears WCAG AA (>7:1 for #36454f)
+   regardless of what the page background image shows behind it. */
+.agus-scope .audio-description-section {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  max-width: 420px;
+  margin: 24px auto 0;
+  padding: 20px 24px;
+  text-align: center;
+  background: rgba(241, 250, 228, 0.92);
+  border: 1px solid rgba(54, 69, 79, 0.25);
+  border-radius: 12px;
+}
+
+.agus-scope .audio-description-note {
+  margin: 0;
+  color: #36454f;
+  font-family: "Fraunces", Georgia, serif;
+  font-size: 15px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+.agus-scope .audio-description-toggle {
+  border: 1px solid #36454f;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.55);
+  color: #36454f;
+  padding: 8px 23px;
+  font-family: "Fraunces", Georgia, serif;
+  font-size: 18px;
+  font-weight: 400;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.agus-scope .audio-description-toggle:hover {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.agus-scope .audio-description-toggle:focus-visible {
+  outline: 2px solid #f32121;
+  outline-offset: 2px;
+}
+
+/* No opacity dim here — a faded label would drop below AA. The "coming
+   soon" text plus the default cursor already signal the inactive state. */
+.agus-scope .audio-description-toggle:disabled {
+  cursor: default;
 }
 
 /* ----------Smaller text/button on mobile---------- */
@@ -179,6 +227,14 @@
 
   .agus-scope .play-button {
     bottom: 105px;
-    font-size: 38px;
+    font-size: 30px;
+  }
+
+  .agus-scope .audio-description-note {
+    font-size: 13.5px;
+  }
+
+  .agus-scope .audio-description-toggle {
+    font-size: 16.5px;
   }
 }
